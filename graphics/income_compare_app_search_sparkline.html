@@ -1,0 +1,218 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>City Median Income Rank — 2024</title>
+  <style>
+    :root {
+      --bg: #ffffff; --text: #111827; --muted: #6b7280; --accent: #2563eb; --accent-2: #d1d5db;
+    }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color: var(--text); background: var(--bg); }
+    .embed { max-width: 800px; margin: 0 auto; padding: 16px; box-sizing: border-box; }
+    h1 { font-size: 1.1rem; margin: 0 0 8px; }
+    .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 16px; }
+
+    /* Search inputs */
+    .controls { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
+    @media (min-width: 540px) { .controls { grid-template-columns: 1fr 1fr; } }
+    label { font-size: .85rem; color: var(--muted); display:block; margin-bottom: 4px; }
+    .searchbox { position: relative; }
+    .searchbox input[type=search] { width: 100%; padding: 10px 12px; border: 1px solid var(--accent-2); border-radius: 8px; font-size: .95rem; }
+    .suggest { position:absolute; z-index:10; inset-inline:0; top: 100%; background:#fff; border:1px solid var(--accent-2); border-radius: 8px; margin-top:4px; max-height:220px; overflow:auto; box-shadow: 0 4px 12px rgba(0,0,0,.08); display:none; }
+    .option { padding:8px 10px; cursor:pointer; }
+    .option:hover, .option[aria-selected=true] { background:#eef2ff; }
+
+    .cards { display:grid; grid-template-columns:1fr; gap:12px; }
+    @media (min-width:540px) { .cards { grid-template-columns:1fr 1fr; } }
+    .card { border:1px solid var(--accent-2); border-radius:8px; padding:12px; }
+    .city { font-weight:600; }
+    .metric { font-size:.9rem; margin-top:6px; color:var(--muted); }
+    .big { font-size:1.6rem; font-weight:700; margin-top:2px; }
+    .rank { color: var(--accent); }
+    .barwrap { height:8px; background:#f3f4f6; border-radius:4px; overflow:hidden; margin-top:8px; }
+    .bar { height:100%; background: var(--accent); width:0%; transition: width .2s ease; }
+    .compare .bar { background:#9333ea; }
+
+    /* Sparkline */
+    .spark { width:100%; height:64px; margin-top:10px; }
+    .axis { stroke:#e5e7eb; stroke-width:1; }
+    .line { fill:none; stroke: var(--accent); stroke-width:2; }
+    .compare .line { stroke:#9333ea; }
+    .dot { fill: var(--accent); }
+    .compare .dot { fill:#9333ea; }
+
+    .foot { margin-top: 14px; font-size: .8rem; color:var(--muted); display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .btn { appearance:none; border:1px solid var(--accent-2); padding:6px 10px; border-radius:6px; background:#fff; cursor:pointer; font-size:.85rem; }
+  </style>
+</head>
+<body>
+  <div class="embed" id="app" role="region" aria-labelledby="title">
+    <h1 id="title">How does your city rank on median household income?</h1>
+    <div class="sub">2024 median household income (places in Michigan). Start typing to filter, then select a city and a comparison.</div>
+
+    <div class="controls">
+      <div class="searchbox">
+        <label for="city">Your city</label>
+        <input id="city" type="search" autocomplete="off" aria-controls="cityList" aria-expanded="false" aria-autocomplete="list" placeholder="Type to search…" />
+        <div id="cityList" class="suggest" role="listbox" aria-label="City suggestions"></div>
+      </div>
+      <div class="searchbox">
+        <label for="compare">Compare to</label>
+        <input id="compare" type="search" autocomplete="off" aria-controls="compList" aria-expanded="false" aria-autocomplete="list" placeholder="Type to search…" />
+        <div id="compList" class="suggest" role="listbox" aria-label="Comparison suggestions"></div>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card primary">
+        <div class="city" id="cityName"></div>
+        <div class="metric">2024 median income</div>
+        <div class="big" id="cityIncome"></div>
+        <div class="metric">Rank among Michigan cities</div>
+        <div class="big rank" id="cityRank"></div>
+        <div class="barwrap"><div class="bar" id="cityBar"></div></div>
+        <svg class="spark" id="citySpark" viewBox="0 0 300 64" preserveAspectRatio="none" aria-label="2019–2024 trend"></svg>
+      </div>
+      <div class="card compare">
+        <div class="city" id="compName"></div>
+        <div class="metric">2024 median income</div>
+        <div class="big" id="compIncome"></div>
+        <div class="metric">Rank among Michigan cities</div>
+        <div class="big rank" id="compRank"></div>
+        <div class="barwrap"><div class="bar" id="compBar"></div></div>
+        <svg class="spark" id="compSpark" viewBox="0 0 300 64" preserveAspectRatio="none" aria-label="2019–2024 trend"></svg>
+      </div>
+    </div>
+
+    <div class="foot">
+      <button class="btn" id="swap" aria-label="Swap cities">Swap</button>
+      <button class="btn" id="copyLink" aria-label="Copy shareable link">Copy link</button>
+      <span id="count"></span>
+    </div>
+  </div>
+
+  <script id="data" type="application/json">[{"place": "Allen Park city, Michigan", "2019": 63756.0, "2021": 66022.0, "2022": 72511.0, "2023": 88668.0, "2024": 85842.0, "rank_2024": 13, "change_19_24": 22086.0, "pct_change_19_24": 34.64144551101073, "change_23_24": -2826.0, "pct_change_23_24": -3.1871701177425904}, {"place": "Allendale CDP, Michigan", "2019": 66217.0, "2021": 51069.0, "2022": 60599.0, "2023": 53296.0, "2024": 75545.0, "rank_2024": 21, "change_19_24": 9328.0, "pct_change_19_24": 14.087016929187367, "change_23_24": 22249.0, "pct_change_23_24": 41.74609726808766}, {"place": "Ann Arbor city, Michigan", "2019": 72137.0, "2021": 68864.0, "2022": 78740.0, "2023": 76207.0, "2024": 80603.0, "rank_2024": 16, "change_19_24": 8466.0, "pct_change_19_24": 11.73600232890195, "change_23_24": 4396.0, "pct_change_23_24": 5.768498956788746}, {"place": "Auburn Hills city, Michigan", "2019": 64562.0, "2021": 72630.0, "2022": 63534.0, "2023": 76774.0, "2024": 96899.0, "rank_2024": 9, "change_19_24": 32337.0, "pct_change_19_24": 50.08673832904804, "change_23_24": 20125.0, "pct_change_23_24": 26.213301378070703}, {"place": "Battle Creek city, Michigan", "2019": 40965.0, "2021": 44899.0, "2022": 53920.0, "2023": 51265.0, "2024": 58355.0, "rank_2024": 39, "change_19_24": 17390.0, "pct_change_19_24": 42.45087269620408, "change_23_24": 7090.0, "pct_change_23_24": 13.830098507753826}, {"place": "Bay City city, Michigan", "2019": 39776.0, "2021": 44447.0, "2022": 44193.0, "2023": 44356.0, "2024": 54998.0, "rank_2024": 45, "change_19_24": 15222.0, "pct_change_19_24": 38.26930812550282, "change_23_24": 10642.0, "pct_change_23_24": 23.99224456668771}, {"place": "Birmingham city, Michigan", "2019": 132490.0, "2021": 147078.0, "2022": 129648.0, "2023": 127472.0, "2024": 159662.0, "rank_2024": 1, "change_19_24": 27172.0, "pct_change_19_24": 20.5087176390671, "change_23_24": 32190.0, "pct_change_23_24": 25.252604493535834}, {"place": "Burton city, Michigan", "2019": 45688.0, "2021": 52860.0, "2022": 52252.0, "2023": 54139.0, "2024": 65589.0, "rank_2024": 32, "change_19_24": 19901.0, "pct_change_19_24": 43.55848362808615, "change_23_24": 11450.0, "pct_change_23_24": 21.149263931731284}, {"place": "Dearborn Heights city, Michigan", "2019": 51464.0, "2021": 54863.0, "2022": 47467.0, "2023": 59672.0, "2024": 51031.0, "rank_2024": 48, "change_19_24": -433.0, "pct_change_19_24": -0.8413648375563502, "change_23_24": -8641.0, "pct_change_23_24": -14.480828529293472}, {"place": "Dearborn city, Michigan", "2019": 53509.0, "2021": 61079.0, "2022": 58467.0, "2023": 51670.0, "2024": 59786.0, "rank_2024": 37, "change_19_24": 6277.0, "pct_change_19_24": 11.730736885383768, "change_23_24": 8116.0, "pct_change_23_24": 15.707373717824655}, {"place": "Detroit city, Michigan", "2019": 33965.0, "2021": 36140.0, "2022": 36453.0, "2023": 38080.0, "2024": 39209.0, "rank_2024": 57, "change_19_24": 5244.0, "pct_change_19_24": 15.43942293537465, "change_23_24": 1129.0, "pct_change_23_24": 2.964810924369748}, {"place": "East Lansing city, Michigan", "2019": 40794.0, "2021": 43995.0, "2022": 53665.0, "2023": 29869.0, "2024": 50170.0, "rank_2024": 49, "change_19_24": 9376.0, "pct_change_19_24": 22.98377212335147, "change_23_24": 20301.0, "pct_change_23_24": 67.96678830894908}, {"place": "Eastpointe city, Michigan", "2019": 43737.0, "2021": 47948.0, "2022": 60430.0, "2023": 60966.0, "2024": 68788.0, "rank_2024": 28, "change_19_24": 25051.0, "pct_change_19_24": 57.27644785879232, "change_23_24": 7822.0, "pct_change_23_24": 12.830102024078997}, {"place": "Farmington Hills city, Michigan", "2019": 86178.0, "2021": 95960.0, "2022": 104593.0, "2023": 90598.0, "2024": 104761.0, "rank_2024": 6, "change_19_24": 18583.0, "pct_change_19_24": 21.563508087911067, "change_23_24": 14163.0, "pct_change_23_24": 15.632795425947592}, {"place": "Flint city, Michigan", "2019": 32236.0, "2021": 37102.0, "2022": 33036.0, "2023": 33141.0, "2024": 41410.0, "rank_2024": 55, "change_19_24": 9174.0, "pct_change_19_24": 28.45886586425115, "change_23_24": 8269.0, "pct_change_23_24": 24.9509670800519}, {"place": "Forest Hills CDP, Michigan", "2019": 131910.0, "2021": 132104.0, "2022": 152715.0, "2023": 138750.0, "2024": 141619.0, "rank_2024": 2, "change_19_24": 9709.0, "pct_change_19_24": 7.360321431278901, "change_23_24": 2869.0, "pct_change_23_24": 2.067747747747748}, {"place": "Garden City city, Michigan", "2019": 55999.0, "2021": 64851.0, "2022": 65775.0, "2023": 61276.0, "2024": 80202.0, "rank_2024": 17, "change_19_24": 24203.0, "pct_change_19_24": 43.22041465026161, "change_23_24": 18926.0, "pct_change_23_24": 30.88648084078595}, {"place": "Grand Rapids city, Michigan", "2019": 51817.0, "2021": 59596.0, "2022": 65660.0, "2023": 70258.0, "2024": 70515.0, "rank_2024": 25, "change_19_24": 18698.0, "pct_change_19_24": 36.084682633112685, "change_23_24": 257.0, "pct_change_23_24": 0.3657946426029776}, {"place": "Hamtramck city, Michigan", "2019": 30145.0, "2021": 40690.0, "2022": 44761.0, "2023": 34828.0, "2024": 37480.0, "rank_2024": 59, "change_19_24": 7335.0, "pct_change_19_24": 24.33239343174656, "change_23_24": 2652.0, "pct_change_23_24": 7.614562995291145}, {"place": "Holland city, Michigan", "2019": 47611.0, "2021": 64495.0, "2022": 75395.0, "2023": 79716.0, "2024": 75850.0, "rank_2024": 20, "change_19_24": 28239.0, "pct_change_19_24": 59.31192371510785, "change_23_24": -3866.0, "pct_change_23_24": -4.84971649355211}, {"place": "Holt CDP, Michigan", "2019": 73738.0, "2021": 72281.0, "2022": 84847.0, "2023": 82922.0, "2024": 79357.0, "rank_2024": 18, "change_19_24": 5619.0, "pct_change_19_24": 7.6202229515310975, "change_23_24": -3565.0, "pct_change_23_24": -4.299220954632064}, {"place": "Inkster city, Michigan", "2019": 26534.0, "2021": 38928.0, "2022": 31030.0, "2023": 35143.0, "2024": 40572.0, "rank_2024": 56, "change_19_24": 14038.0, "pct_change_19_24": 52.90570588678677, "change_23_24": 5429.0, "pct_change_23_24": 15.448311185726888}, {"place": "Jackson city, Michigan", "2019": 33065.0, "2021": 34989.0, "2022": 43478.0, "2023": 42648.0, "2024": 46493.0, "rank_2024": 52, "change_19_24": 13428.0, "pct_change_19_24": 40.6109178890065, "change_23_24": 3845.0, "pct_change_23_24": 9.015663102607393}, {"place": "Kalamazoo city, Michigan", "2019": 39494.0, "2021": 40227.0, "2022": 43509.0, "2023": 50044.0, "2024": 59226.0, "rank_2024": 38, "change_19_24": 19732.0, "pct_change_19_24": 49.962019547273, "change_23_24": 9182.0, "pct_change_23_24": 18.34785388857805}, {"place": "Kentwood city, Michigan", "2019": 61393.0, "2021": 68829.0, "2022": 65082.0, "2023": 82706.0, "2024": 67129.0, "rank_2024": 29, "change_19_24": 5736.0, "pct_change_19_24": 9.343084716498623, "change_23_24": -15577.0, "pct_change_23_24": -18.834183735158277}, {"place": "Lansing city, Michigan", "2019": 41066.0, "2021": 48818.0, "2022": 48962.0, "2023": 55197.0, "2024": 55366.0, "rank_2024": 44, "change_19_24": 14300.0, "pct_change_19_24": 34.82199386353674, "change_23_24": 169.0, "pct_change_23_24": 0.3061760602931319}, {"place": "Lincoln Park city, Michigan", "2019": 43135.0, "2021": 51328.0, "2022": 59666.0, "2023": 51200.0, "2024": 57965.0, "rank_2024": 40, "change_19_24": 14830.0, "pct_change_19_24": 34.38043352266141, "change_23_24": 6765.0, "pct_change_23_24": 13.212890625000002}, {"place": "Livonia city, Michigan", "2019": 81305.0, "2021": 87332.0, "2022": 92125.0, "2023": 95003.0, "2024": 98834.0, "rank_2024": 8, "change_19_24": 17529.0, "pct_change_19_24": 21.55955968267634, "change_23_24": 3831.0, "pct_change_23_24": 4.032504236708315}, {"place": "Madison Heights city, Michigan", "2019": 60491.0, "2021": 63885.0, "2022": 71241.0, "2023": 67190.0, "2024": 72337.0, "rank_2024": 23, "change_19_24": 11846.0, "pct_change_19_24": 19.58307847448381, "change_23_24": 5147.0, "pct_change_23_24": 7.660366125911594}, {"place": "Marquette city, Michigan", "2019": 47185.0, "2021": 45977.0, "2022": 51103.0, "2023": 61841.0, "2024": 54870.0, "rank_2024": 46, "change_19_24": 7685.0, "pct_change_19_24": 16.286955600296704, "change_23_24": -6971.0, "pct_change_23_24": -11.272456784334018}, {"place": "Midland city, Michigan", "2019": 69265.0, "2021": 67340.0, "2022": 73074.0, "2023": 69462.0, "2024": 70839.0, "rank_2024": 24, "change_19_24": 1574.0, "pct_change_19_24": 2.2724319641954813, "change_23_24": 1377.0, "pct_change_23_24": 1.9823788546255507}, {"place": "Mount Pleasant city, Michigan", "2019": 30623.0, "2021": 45421.0, "2022": 42679.0, "2023": 35622.0, "2024": 49587.0, "rank_2024": 50, "change_19_24": 18964.0, "pct_change_19_24": 61.92730953858211, "change_23_24": 13965.0, "pct_change_23_24": 39.20330133063837}, {"place": "Muskegon city, Michigan", "2019": 28406.0, "2021": 40468.0, "2022": 39853.0, "2023": 58136.0, "2024": 32074.0, "rank_2024": 60, "change_19_24": 3668.0, "pct_change_19_24": 12.91276490882208, "change_23_24": -26062.0, "pct_change_23_24": -44.82936562543003}, {"place": "Norton Shores city, Michigan", "2019": 65581.0, "2021": 63938.0, "2022": 64517.0, "2023": 81838.0, "2024": 86003.0, "rank_2024": 12, "change_19_24": 20422.0, "pct_change_19_24": 31.140116802122563, "change_23_24": 4165.0, "pct_change_23_24": 5.089322808475281}, {"place": "Novi city, Michigan", "2019": 101404.0, "2021": 104597.0, "2022": 101756.0, "2023": 97092.0, "2024": 109321.0, "rank_2024": 5, "change_19_24": 7917.0, "pct_change_19_24": 7.807384324089779, "change_23_24": 12229.0, "pct_change_23_24": 12.59527046512586}, {"place": "Oak Park city, Michigan", "2019": 43377.0, "2021": 70610.0, "2022": 58249.0, "2023": 68014.0, "2024": 70064.0, "rank_2024": 27, "change_19_24": 26687.0, "pct_change_19_24": 61.523387970583485, "change_23_24": 2050.0, "pct_change_23_24": 3.0140853353721293}, {"place": "Okemos CDP, Michigan", "2019": 81314.0, "2021": 83680.0, "2022": 94762.0, "2023": 98046.0, "2024": 96780.0, "rank_2024": 10, "change_19_24": 15466.0, "pct_change_19_24": 19.02009494060064, "change_23_24": -1266.0, "pct_change_23_24": -1.2912306468392387}, {"place": "Pontiac city, Michigan", "2019": 34380.0, "2021": 36998.0, "2022": 41124.0, "2023": 42919.0, "2024": 45002.0, "rank_2024": 53, "change_19_24": 10622.0, "pct_change_19_24": 30.89586969168121, "change_23_24": 2083.0, "pct_change_23_24": 4.853328362729793}, {"place": "Port Huron city, Michigan", "2019": 40912.0, "2021": 45827.0, "2022": 43059.0, "2023": 43595.0, "2024": 46957.0, "rank_2024": 51, "change_19_24": 6045.0, "pct_change_19_24": 14.77561595619867, "change_23_24": 3362.0, "pct_change_23_24": 7.711893565775892}, {"place": "Portage city, Michigan", "2019": 62998.0, "2021": 70625.0, "2022": 68926.0, "2023": 80946.0, "2024": 66290.0, "rank_2024": 31, "change_19_24": 3292.0, "pct_change_19_24": 5.225562716276707, "change_23_24": -14656.0, "pct_change_23_24": -18.105897758999827}, {"place": "Rochester Hills city, Michigan", "2019": 101620.0, "2021": 103023.0, "2022": 107137.0, "2023": 105784.0, "2024": 127505.0, "rank_2024": 3, "change_19_24": 25885.0, "pct_change_19_24": 25.472347962999407, "change_23_24": 21721.0, "pct_change_23_24": 20.53335097935416}, {"place": "Romulus city, Michigan", "2019": 60856.0, "2021": 60156.0, "2022": 55928.0, "2023": 77560.0, "2024": 53509.0, "rank_2024": 47, "change_19_24": -7347.0, "pct_change_19_24": -12.072761929801498, "change_23_24": -24051.0, "pct_change_23_24": -31.00954100051573}, {"place": "Roseville city, Michigan", "2019": 57564.0, "2021": 53632.0, "2022": 59352.0, "2023": 62592.0, "2024": 64224.0, "rank_2024": 34, "change_19_24": 6660.0, "pct_change_19_24": 11.569731081926204, "change_23_24": 1632.0, "pct_change_23_24": 2.607361963190184}, {"place": "Royal Oak city, Michigan", "2019": 80017.0, "2021": 89706.0, "2022": 91858.0, "2023": 101329.0, "2024": 102179.0, "rank_2024": 7, "change_19_24": 22162.0, "pct_change_19_24": 27.69661446942525, "change_23_24": 850.0, "pct_change_23_24": 0.8388516614197319}, {"place": "Saginaw city, Michigan", "2019": 29840.0, "2021": 28011.0, "2022": 37014.0, "2023": 42168.0, "2024": 39183.0, "rank_2024": 58, "change_19_24": 9343.0, "pct_change_19_24": 31.310321715817697, "change_23_24": -2985.0, "pct_change_23_24": -7.078827546955037}, {"place": "Southfield city, Michigan", "2019": 51637.0, "2021": 55463.0, "2022": 65316.0, "2023": 65497.0, "2024": 66815.0, "rank_2024": 30, "change_19_24": 15178.0, "pct_change_19_24": 29.39365183879776, "change_23_24": 1318.0, "pct_change_23_24": 2.012305907140785}, {"place": "Southgate city, Michigan", "2019": 60755.0, "2021": 52447.0, "2022": 60843.0, "2023": 74487.0, "2024": 62475.0, "rank_2024": 35, "change_19_24": 1720.0, "pct_change_19_24": 2.831042712533948, "change_23_24": -12012.0, "pct_change_23_24": -16.126303918804624}, {"place": "St. Clair Shores city, Michigan", "2019": 64746.0, "2021": 64293.0, "2022": 72387.0, "2023": 68581.0, "2024": 78207.0, "rank_2024": 19, "change_19_24": 13461.0, "pct_change_19_24": 20.79047354276712, "change_23_24": 9626.0, "pct_change_23_24": 14.035957480934952}, {"place": "Sterling Heights city, Michigan", "2019": 67238.0, "2021": 69104.0, "2022": 78049.0, "2023": 73702.0, "2024": 81102.0, "rank_2024": 14, "change_19_24": 13864.0, "pct_change_19_24": 20.619292661887624, "change_23_24": 7400.0, "pct_change_23_24": 10.040433095438386}, {"place": "Taylor city, Michigan", "2019": 51470.0, "2021": 53524.0, "2022": 58253.0, "2023": 56485.0, "2024": 55647.0, "rank_2024": 42, "change_19_24": 4177.0, "pct_change_19_24": 8.115407033223237, "change_23_24": -838.0, "pct_change_23_24": -1.4835797114278126}, {"place": "Troy city, Michigan", "2019": 110909.0, "2021": 98170.0, "2022": 109444.0, "2023": 106965.0, "2024": 118720.0, "rank_2024": 4, "change_19_24": 7811.0, "pct_change_19_24": 7.042710690746468, "change_23_24": 11755.0, "pct_change_23_24": 10.989576029542372}, {"place": "Walker city, Michigan", "2019": 59550.0, "2021": 68033.0, "2022": 78169.0, "2023": 70841.0, "2024": 80796.0, "rank_2024": 15, "change_19_24": 21246.0, "pct_change_19_24": 35.67758186397985, "change_23_24": 9955.0, "pct_change_23_24": 14.052596660126198}, {"place": "Warren city, Michigan", "2019": 52739.0, "2021": 60042.0, "2022": 60285.0, "2023": 60572.0, "2024": 56281.0, "rank_2024": 41, "change_19_24": 3542.0, "pct_change_19_24": 6.716092455298734, "change_23_24": -4291.0, "pct_change_23_24": -7.084131281780361}, {"place": "Waverly CDP, Michigan", "2019": 62100.0, "2021": 57915.0, "2022": 63646.0, "2023": 73379.0, "2024": 70364.0, "rank_2024": 26, "change_19_24": 8264.0, "pct_change_19_24": 13.30756843800322, "change_23_24": -3015.0, "pct_change_23_24": -4.108804971449597}, {"place": "Westland city, Michigan", "2019": 54303.0, "2021": 56191.0, "2022": 56630.0, "2023": 55821.0, "2024": 61390.0, "rank_2024": 36, "change_19_24": 7087.0, "pct_change_19_24": 13.050844336408671, "change_23_24": 5569.0, "pct_change_23_24": 9.97653212948532}, {"place": "Wyandotte city, Michigan", "2019": 56168.0, "2021": 56391.0, "2022": 57913.0, "2023": 73027.0, "2024": 72538.0, "rank_2024": 22, "change_19_24": 16370.0, "pct_change_19_24": 29.144708730950008, "change_23_24": -489.0, "pct_change_23_24": -0.6696153477480932}, {"place": "Wyoming city, Michigan", "2019": 57570.0, "2021": 61583.0, "2022": 64499.0, "2023": 73950.0, "2024": 64645.0, "rank_2024": 33, "change_19_24": 7075.0, "pct_change_19_24": 12.289386833420185, "change_23_24": -9305.0, "pct_change_23_24": -12.582826233941852}, {"place": "Ypsilanti city, Michigan", "2019": 44789.0, "2021": 36613.0, "2022": 50032.0, "2023": 45431.0, "2024": 55619.0, "rank_2024": 43, "change_19_24": 10830.0, "pct_change_19_24": 24.18004420728304, "change_23_24": 10188.0, "pct_change_23_24": 22.425216262023728}]</script>
+  <script>
+  (function() {
+    const data = JSON.parse(document.getElementById('data').textContent);
+    const incomes = data.map(d => d["2024"]).filter(x => typeof x === 'number');
+    const max = Math.max(...incomes), min = Math.min(...incomes);
+    const years = ["2019","2021","2022","2023","2024"]; // sequence for sparkline
+
+    const els = {
+      cityInput: document.getElementById('city'),
+      compInput: document.getElementById('compare'),
+      cityList: document.getElementById('cityList'),
+      compList: document.getElementById('compList'),
+      cityName: document.getElementById('cityName'),
+      cityIncome: document.getElementById('cityIncome'),
+      cityRank: document.getElementById('cityRank'),
+      cityBar: document.getElementById('cityBar'),
+      citySpark: document.getElementById('citySpark'),
+      compName: document.getElementById('compName'),
+      compIncome: document.getElementById('compIncome'),
+      compRank: document.getElementById('compRank'),
+      compBar: document.getElementById('compBar'),
+      compSpark: document.getElementById('compSpark'),
+      count: document.getElementById('count'),
+    };
+
+    els.count.textContent = `${data.length} Michigan places included`;
+
+    function fmtMoney(n) {
+      return (n == null || isNaN(n)) ? '—' : new Intl.NumberFormat('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0}).format(n);
+    }
+    function pctWidth(val) {
+      if (val == null || isNaN(val)) return 0;
+      const p = ((val - min) / (max - min)) * 100;
+      return Math.max(0, Math.min(100, p));
+    }
+
+    // Suggestion list logic
+    function buildSuggestions(q) {
+      if (!q) return [];
+      const needle = q.toLowerCase();
+      return data.filter(d => d.place.toLowerCase().includes(needle)).slice(0, 50);
+    }
+    function renderList(container, items, input) {
+      container.innerHTML = '';
+      if (items.length === 0) { container.style.display = 'none'; input.setAttribute('aria-expanded','false'); return; }
+      items.forEach((d, idx) => {
+        const div = document.createElement('div');
+        div.className = 'option'; div.role='option'; div.textContent = d.place; div.tabIndex = -1;
+        div.addEventListener('click', () => { input.value = d.place; container.style.display='none'; input.setAttribute('aria-expanded','false'); update(); });
+        container.appendChild(div);
+      });
+      container.style.display = 'block'; input.setAttribute('aria-expanded','true');
+    }
+
+    function getByName(name) { return data.find(d => d.place === name); }
+
+    function drawSpark(svg, rec, cls) {
+      const w = 300, h = 64, pad = 6;
+      // Gather points (skip missing)
+      const pts = years.map((y,i) => { return {x: i, val: rec[y]}; }).filter(p => p.val != null && !isNaN(p.val));
+      const allVals = data.map(d => d['2024']).filter(v => typeof v === 'number');
+      const vMin = Math.min(...allVals), vMax = Math.max(...allVals);
+      const xScale = x => pad + (x/(years.length-1)) * (w - 2*pad);
+      const yScale = v => h - pad - ((v - vMin)/(vMax - vMin)) * (h - 2*pad);
+      const path = pts.map((p,i) => `${i?'L':'M'}${xScale(p.x)},${yScale(p.val)}`).join(' ');
+      svg.innerHTML = '';
+      // axis baseline
+      const ax = document.createElementNS('http://www.w3.org/2000/svg','line');
+      ax.setAttribute('x1', pad); ax.setAttribute('x2', w-pad); ax.setAttribute('y1', h-pad); ax.setAttribute('y2', h-pad); ax.setAttribute('class','axis'); svg.appendChild(ax);
+      if (pts.length >= 2) {
+        const pathEl = document.createElementNS('http://www.w3.org/2000/svg','path');
+        pathEl.setAttribute('d', path); pathEl.setAttribute('class','line'); svg.appendChild(pathEl);
+      }
+      pts.forEach(p => {
+        const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        c.setAttribute('cx', xScale(p.x)); c.setAttribute('cy', yScale(p.val)); c.setAttribute('r', 3); c.setAttribute('class','dot'); svg.appendChild(c);
+      });
+      // year labels (first and last)
+      const t1 = document.createElementNS('http://www.w3.org/2000/svg','text');
+      t1.setAttribute('x', pad); t1.setAttribute('y', h-2); t1.setAttribute('fill', '#9ca3af'); t1.setAttribute('font-size','10'); t1.textContent = '2019'; svg.appendChild(t1);
+      const t2 = document.createElementNS('http://www.w3.org/2000/svg','text');
+      t2.setAttribute('x', w-pad-26); t2.setAttribute('y', h-2); t2.setAttribute('fill', '#9ca3af'); t2.setAttribute('font-size','10'); t2.textContent = '2024'; svg.appendChild(t2);
+    }
+
+    function update() {
+      const c1 = getByName(els.cityInput.value) || data[0];
+      const c2 = getByName(els.compInput.value) || data[1] || data[0];
+      els.cityInput.value = c1.place; els.compInput.value = c2.place;
+      els.cityName.textContent = c1.place; els.cityIncome.textContent = fmtMoney(c1['2024']); els.cityRank.textContent = `#${c1.rank_2024} of ${data.length}`; els.cityBar.style.width = pctWidth(c1['2024']) + '%';
+      els.compName.textContent = c2.place; els.compIncome.textContent = fmtMoney(c2['2024']); els.compRank.textContent = `#${c2.rank_2024} of ${data.length}`; els.compBar.style.width = pctWidth(c2['2024']) + '%';
+      drawSpark(els.citySpark, c1, 'primary');
+      drawSpark(els.compSpark, c2, 'compare');
+      const params = new URLSearchParams(location.search); params.set('city', c1.place); params.set('compare', c2.place); history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+    }
+
+    function initFromQuery() {
+      const params = new URLSearchParams(location.search);
+      const q1 = params.get('city'); const q2 = params.get('compare');
+      if (q1 && getByName(q1)) els.cityInput.value = q1; if (q2 && getByName(q2)) els.compInput.value = q2;
+    }
+
+    // Wire up filtering
+    function hookup(input, list) {
+      input.addEventListener('input', () => { const items = buildSuggestions(input.value); renderList(list, items, input); });
+      input.addEventListener('focus', () => { const items = buildSuggestions(input.value); renderList(list, items, input); });
+      input.addEventListener('blur', () => { setTimeout(() => { list.style.display='none'; input.setAttribute('aria-expanded','false'); }, 150); });
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { update(); list.style.display='none'; } });
+    }
+
+    hookup(els.cityInput, els.cityList); hookup(els.compInput, els.compList);
+
+    document.getElementById('swap').addEventListener('click', () => { const a = els.cityInput.value, b = els.compInput.value; els.cityInput.value = b; els.compInput.value = a; update(); });
+    document.getElementById('copyLink').addEventListener('click', async () => { try { await navigator.clipboard.writeText(location.href); alert('Link copied to clipboard'); } catch(e){ console.log(e); } });
+
+    initFromQuery();
+    if (!els.cityInput.value) els.cityInput.value = data[0].place;
+    if (!els.compInput.value) els.compInput.value = data[1] ? data[1].place : data[0].place;
+    update();
+  })();
+  </script>
+</body>
+</html>
