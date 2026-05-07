@@ -463,24 +463,38 @@
     submitBtn.classList.add('loading');
     submitBtn.disabled = true;
 
-    setTimeout(function () {
-      /* On success: hide form, show thank-you */
-      formBody.style.display = 'none';
-      successState.classList.add('visible');
-      successState.focus();
-
-      /*
-       * TO WIRE UP A REAL ENDPOINT, replace the setTimeout above with:
-       *
-       * fetch('https://your-endpoint.com/submit', {
-       *   method: 'POST',
-       *   headers: { 'Content-Type': 'application/json' },
-       *   body: JSON.stringify({ name, email, answer })
-       * })
-       * .then(r => r.ok ? showSuccess() : showError('submit'))
-       * .catch(() => showError('submit'));
-       */
-    }, 900);
+    fetch('YOUR_APPS_SCRIPT_WEB_APP_URL_HERE', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify({
+        name: name,
+        email: email,
+        answer: answer,
+        source: window.location.href
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      submitBtn.classList.remove('loading');
+      submitBtn.disabled = false;
+    
+      if (data.success) {
+        formBody.style.display = 'none';
+        successState.classList.add('visible');
+        successState.focus();
+        form.reset();
+        charCount.textContent = '0 / 600';
+      } else {
+        alert('There was a problem submitting the form. Please try again.');
+      }
+    })
+    .catch(() => {
+      submitBtn.classList.remove('loading');
+      submitBtn.disabled = false;
+      alert('There was a problem submitting the form. Please try again.');
+    });
   });
 })();
 </script>
