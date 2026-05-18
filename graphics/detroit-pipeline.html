@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detroit Gunshot Detection — Alert Pipeline 2025</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;900&family=Barlow+Condensed:wght@700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; background: #f7f5f2; }
+
+:root {
+  --clr-active:   #9b2222;
+  --clr-inactive: #d0ccca;
+  --clr-bg:       #f7f5f2;
+  --clr-text:     #1a1a1a;
+  --clr-muted:    #6b6b6b;
+  --clr-border:   #e0ddd9;
+  --font-body:    'Barlow', sans-serif;
+  --font-display: 'Barlow Condensed', sans-serif;
+  --font-mono:    'DM Mono', monospace;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--clr-bg);
+  color: var(--clr-text);
+}
+
+/* ── STICKY CONTAINER ── */
+.sticky-outer { position: relative; }
+
+.sticky-inner {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  /* pad scales with viewport so nothing clips */
+  padding: clamp(0.6rem, 2vh, 1.4rem) clamp(0.75rem, 3vw, 2rem) clamp(0.6rem, 2vh, 1.2rem);
+  overflow: hidden;
+}
+
+/* ── HEADER ── */
+.page-header {
+  border-bottom: 2px solid var(--clr-text);
+  padding-bottom: clamp(0.3rem, 0.8vh, 0.6rem);
+  margin-bottom: clamp(0.4rem, 1vh, 0.9rem);
+  flex-shrink: 0;
+}
+.page-eyebrow {
+  font-family: var(--font-mono);
+  font-size: clamp(0.55rem, 1.1vw, 0.68rem);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--clr-muted);
+  margin-bottom: 0.15rem;
+}
+.page-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(1.3rem, 3.5vw, 2.1rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+.page-subtitle {
+  margin-top: 0.2rem;
+  font-size: clamp(0.72rem, 1.3vw, 0.85rem);
+  color: var(--clr-muted);
+  max-width: 60ch;
+}
+
+/* ── LEGEND ── */
+.legend {
+  display: flex;
+  gap: 1.2rem;
+  align-items: center;
+  margin-bottom: clamp(0.4rem, 1vh, 1rem);
+  flex-shrink: 0;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: clamp(0.56rem, 1vw, 0.65rem);
+  color: var(--clr-muted);
+}
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── STAGE — rows fill remaining height ── */
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.3rem, 1vh, 0.75rem);
+  flex: 1;
+  min-height: 0;
+  justify-content: flex-start;
+}
+
+/* ── SECTION BLOCK ── */
+.section-block {
+  opacity: 0.18;
+  transition: opacity 0.6s var(--ease-out);
+  flex-shrink: 0;
+}
+.section-block.revealed { opacity: 1; }
+
+/* ── ROW ── */
+.row {
+  display: grid;
+  grid-template-columns: clamp(80px, 13vw, 150px) 1fr clamp(70px, 11vw, 120px);
+  align-items: start;
+  gap: clamp(0.5rem, 1.5vw, 1rem);
+}
+
+.row-label { padding-top: 0.05rem; }
+.row-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(0.7rem, 1.4vw, 0.9rem);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  color: var(--clr-muted);
+}
+.row-count {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(1.3rem, 3.5vw, 1.9rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--clr-active);
+  font-variant-numeric: tabular-nums;
+}
+.row-pct {
+  font-family: var(--font-mono);
+  font-size: clamp(0.54rem, 0.9vw, 0.62rem);
+  color: var(--clr-muted);
+  display: block;
+  margin-top: 0.1rem;
+}
+
+/* ── DOT GRID ── */
+.dot-grid {
+  display: flex;
+  flex-wrap: wrap;
+  /* gap scales down on small screens */
+  gap: clamp(1.5px, 0.3vw, 2.5px);
+  align-content: flex-start;
+}
+.dot-grid .d {
+  /* dot size is the key lever — scales with viewport */
+  width:  clamp(5px, 0.85vw, 9px);
+  height: clamp(5px, 0.85vw, 9px);
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(0);
+  flex-shrink: 0;
+}
+
+.row-badge { text-align: right; padding-top: 0.05rem; }
+.badge-val {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(0.8rem, 1.5vw, 1.05rem);
+  color: var(--clr-muted);
+  display: block;
+  white-space: nowrap;
+}
+.badge-label {
+  font-family: var(--font-mono);
+  font-size: clamp(0.5rem, 0.85vw, 0.6rem);
+  color: #aaa;
+  display: block;
+  white-space: nowrap;
+}
+
+/* ── CONNECTOR ── */
+.connector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-left: clamp(80px, 13vw, 150px);
+  opacity: 0;
+  transition: opacity 0.5s var(--ease-out);
+  flex-shrink: 0;
+}
+.connector.visible { opacity: 1; }
+.conn-line { flex: 1; height: 1px; background: var(--clr-border); }
+.conn-label { font-family: var(--font-mono); font-size: clamp(0.52rem, 0.9vw, 0.62rem); color: var(--clr-muted); white-space: nowrap; }
+.conn-arrow { font-size: 0.65rem; color: #ccc; }
+
+/* ── CALLOUT ── */
+.callout {
+  background: #fff;
+  border: 1px solid var(--clr-border);
+  border-left: 4px solid var(--clr-active);
+  border-radius: 4px;
+  padding: clamp(0.4rem, 1vh, 0.65rem) clamp(0.6rem, 1.5vw, 0.9rem);
+  font-size: clamp(0.7rem, 1.2vw, 0.82rem);
+  color: var(--clr-muted);
+  line-height: 1.5;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.5s 0.4s var(--ease-out), max-height 0.5s 0.4s var(--ease-out);
+  flex-shrink: 0;
+}
+.callout.visible { opacity: 1; max-height: 100px; }
+.callout strong { color: var(--clr-text); }
+
+/* ── SCROLL HINT ── */
+.scroll-hint {
+  position: fixed;
+  bottom: 1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: #bbb;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+  transition: opacity 0.4s;
+  z-index: 100;
+}
+.scroll-hint.hidden { opacity: 0; }
+.scroll-chevron { animation: bounce 1.6s ease-in-out infinite; }
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(4px); }
+}
+
+/* ── PROGRESS DOTS ── */
+.progress-dots {
+  position: fixed;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  z-index: 100;
+}
+.pdot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--clr-inactive);
+  transition: background 0.3s, transform 0.3s;
+}
+.pdot.active { background: var(--clr-active); transform: scale(1.4); }
+
+/* scroll spacers */
+.scroll-section { height: 80vh; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="progress-dots" aria-hidden="true">
+  <div class="pdot active" id="pd-0"></div>
+  <div class="pdot" id="pd-1"></div>
+  <div class="pdot" id="pd-2"></div>
+</div>
+
+<div class="scroll-hint" id="scrollHint">
+  <span>scroll to reveal</span>
+  <span class="scroll-chevron">↓</span>
+</div>
+
+<div class="sticky-outer" id="stickyOuter">
+  <div class="sticky-inner">
+
+    <header class="page-header">
+      <p class="page-eyebrow">Detroit Police Department · Gunshot Detection · 2025</p>
+      <h1 class="page-title">From Alert to Arrest</h1>
+      <p class="page-subtitle">Each dot = 10 incidents. Scroll to trace the pipeline.</p>
+    </header>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#9b2222"></div>
+        <span>Counted outcome</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#d0ccca"></div>
+        <span>No outcome</span>
+      </div>
+      <div class="legend-item" style="margin-left:0.15rem">
+        <span>● = 10 incidents</span>
+      </div>
+    </div>
+
+    <div class="stage">
+
+      <!-- ALERTS -->
+      <div class="section-block revealed" id="block-0">
+        <div class="row">
+          <div class="row-label">
+            <div class="row-name">Gunshot<br>Alerts</div>
+            <div class="row-count">10,005</div>
+            <span class="row-pct">100% of alerts</span>
+          </div>
+          <div class="dot-grid" id="grid-alerts"></div>
+          <div class="row-badge">
+            <span class="badge-val">—</span>
+            <span class="badge-label">baseline</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="connector" id="conn-0">
+        <div class="conn-line"></div>
+        <span class="conn-label">leads to</span>
+        <span class="conn-arrow">▼</span>
+      </div>
+
+      <!-- WARRANTS -->
+      <div class="section-block" id="block-1">
+        <div class="row">
+          <div class="row-label">
+            <div class="row-name">Warrants<br>Issued</div>
+            <div class="row-count">250</div>
+            <span class="row-pct">2.5% of alerts</span>
+          </div>
+          <div class="dot-grid" id="grid-warrants"></div>
+          <div class="row-badge">
+            <span class="badge-val">1 in 40</span>
+            <span class="badge-label">alerts → warrant</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="connector" id="conn-1">
+        <div class="conn-line"></div>
+        <span class="conn-label">leads to</span>
+        <span class="conn-arrow">▼</span>
+      </div>
+
+      <!-- ARRESTS -->
+      <div class="section-block" id="block-2">
+        <div class="row">
+          <div class="row-label">
+            <div class="row-name">Arrests<br>Made</div>
+            <div class="row-count">78</div>
+            <span class="row-pct">0.78% of alerts</span>
+          </div>
+          <div class="dot-grid" id="grid-arrests"></div>
+          <div class="row-badge">
+            <span class="badge-val">1 in 128</span>
+            <span class="badge-label">alerts → arrest</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CALLOUT -->
+      <div class="callout" id="callout">
+        <strong>128 alerts for every arrest.</strong> Detroit's gunshot detection system generated 10,005 alerts in 2025. Only 250 led to a warrant — and just 78 resulted in an arrest, a conversion rate of under 1%.
+      </div>
+
+    </div><!-- /stage -->
+  </div><!-- /sticky-inner -->
+
+  <div class="scroll-section" aria-hidden="true"></div>
+  <div class="scroll-section" aria-hidden="true"></div>
+  <div class="scroll-section" aria-hidden="true"></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+const SCALE = 10;
+const DATA = [
+  { total: 10005, active: 10005, gridId: 'grid-alerts' },
+  { total: 10005, active: 250,   gridId: 'grid-warrants' },
+  { total: 10005, active: 78,    gridId: 'grid-arrests' },
+];
+
+const ks = document.createElement('style');
+ks.textContent = `@keyframes dotPop{0%{opacity:0;transform:scale(0)}65%{opacity:1;transform:scale(1.2)}100%{opacity:1;transform:scale(1)}}`;
+document.head.appendChild(ks);
+
+DATA.forEach(d => {
+  const container  = document.getElementById(d.gridId);
+  const totalDots  = Math.ceil(d.total / SCALE);
+  const activeDots = Math.ceil(d.active / SCALE);
+  for (let i = 0; i < totalDots; i++) {
+    const el = document.createElement('div');
+    el.className = 'd';
+    el.style.background = i < activeDots ? '#9b2222' : '#d0ccca';
+    container.appendChild(el);
+  }
+});
+
+const animated = new Set();
+function animateGrid(gridId, delay0) {
+  if (animated.has(gridId)) return;
+  animated.add(gridId);
+  const dots = document.getElementById(gridId).querySelectorAll('.d');
+  const batchSize = 25, batchMs = 13;
+  dots.forEach((dot, i) => {
+    const delay = delay0 + Math.floor(i / batchSize) * batchMs + (i % batchSize) * 1.1;
+    dot.style.animation = `dotPop 0.3s ${delay}ms cubic-bezier(0.34,1.56,0.64,1) forwards`;
+  });
+}
+
+animateGrid('grid-alerts', 0);
+
+const blocks     = [0,1,2].map(i => document.getElementById(`block-${i}`));
+const conns      = [0,1].map(i => document.getElementById(`conn-${i}`));
+const pdots      = [0,1,2].map(i => document.getElementById(`pd-${i}`));
+const callout    = document.getElementById('callout');
+const scrollHint = document.getElementById('scrollHint');
+const outer      = document.getElementById('stickyOuter');
+
+let currentStep = 0;
+
+function getStep() {
+  const scrolled   = -outer.getBoundingClientRect().top;
+  const stepHeight = window.innerHeight * 0.8;
+  return Math.min(Math.max(Math.floor(scrolled / stepHeight), 0), 2);
+}
+
+function applyStep(s) {
+  if (s === currentStep && s !== 0) return;
+  currentStep = s;
+
+  pdots.forEach((d, i) => d.classList.toggle('active', i === s));
+
+  for (let i = 0; i <= s; i++) {
+    blocks[i].classList.add('revealed');
+    if (i > 0) conns[i-1].classList.add('visible');
+    if (i > 0) animateGrid(DATA[i].gridId, 80);
+  }
+  for (let i = s + 1; i <= 2; i++) {
+    blocks[i].classList.remove('revealed');
+    if (conns[i-1]) conns[i-1].classList.remove('visible');
+  }
+
+  if (s === 2) setTimeout(() => callout.classList.add('visible'), 900);
+  else callout.classList.remove('visible');
+
+  if (s > 0) scrollHint.classList.add('hidden');
+}
+
+window.addEventListener('scroll', () => applyStep(getStep()), { passive: true });
+applyStep(0);
+
+})();
+</script>
+</body>
+</html>
