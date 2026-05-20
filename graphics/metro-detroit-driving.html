@@ -200,6 +200,63 @@
     border-top: 1px solid var(--color-divider);
     margin: var(--space-5) 0;
   }
+  /* ============================================================
+     MULTIPLE CHOICE (RADIO GROUP)
+     ============================================================ */
+  .radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-1);
+  }
+  .radio-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    background: var(--dn-bg-soft);
+    border: 1px solid var(--dn-border);
+    border-radius: 0;
+    cursor: pointer;
+    transition: border-color var(--transition), background var(--transition);
+    user-select: none;
+  }
+  .radio-option:hover {
+    border-color: var(--dn-red);
+    background: var(--dn-red-light);
+  }
+  .radio-option input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #aaa;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: border-color var(--transition), background var(--transition);
+    background: #fff;
+    cursor: pointer;
+  }
+  .radio-option input[type="radio"]:checked {
+    border-color: var(--dn-red);
+    background: var(--dn-red);
+    box-shadow: inset 0 0 0 3px #fff;
+  }
+  .radio-option:has(input[type="radio"]:checked) {
+    border-color: var(--dn-red);
+    background: var(--dn-red-light);
+  }
+  .radio-option input[type="radio"]:focus-visible {
+    outline: 2px solid var(--dn-red);
+    outline-offset: 2px;
+  }
+  .radio-label {
+    font-size: var(--text-sm);
+    font-family: var(--dn-sans);
+    color: var(--dn-text);
+    line-height: 1.4;
+    text-transform: none;
+  }
 
   /* ============================================================
      SUBMIT BUTTON
