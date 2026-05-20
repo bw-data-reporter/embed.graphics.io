@@ -346,6 +346,38 @@
             </span>
           </div>
         </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Which area of driving frustrates you most? <span class="required" aria-hidden="true">*</span></label>
+            <div class="radio-group" id="categoryGroup" role="radiogroup">
+              <label class="radio-option">
+                <input type="radio" name="category" value="Road conditions">
+                <span class="radio-label">Road conditions (potholes, construction, etc.)</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="category" value="Commute time">
+                <span class="radio-label">Commute time</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="category" value="Safety">
+                <span class="radio-label">Crashes and safety</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="category" value="Car insurance">
+                <span class="radio-label">Car insurance</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="category" value="Parking">
+                <span class="radio-label">Parking</span>
+              </label>
+            </div>
+            <span class="field-error" id="category-error" role="alert">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Please select a category.
+            </span>
+          </div>
+        </div>
+        
 
         <hr class="form-divider">
 
@@ -410,6 +442,9 @@
   document.getElementById('reader-name').addEventListener('input', function () { hideError('name-error'); });
   document.getElementById('reader-email').addEventListener('input', function () { hideError('email-error'); });
   textarea.addEventListener('input', function () { hideError('answer-error'); });
+  document.querySelectorAll('input[name="category"]').forEach(function(r) {
+    r.addEventListener('change', function () { hideError('category-error'); });
+  });
 
   /* ---- Form submission ---- */
   const form = document.getElementById('peevesForm');
@@ -430,6 +465,9 @@
     if (!validateEmail(email)) { showError('email-error'); valid = false; }
     if (!answer) { showError('answer-error'); valid = false; }
 
+    const categoryInput = document.querySelector('input[name="category"]:checked');
+    if (!categoryInput) { showError('category-error'); valid = false; }
+    
     if (!valid) return;
 
     /* Simulate submission — replace this block with your real endpoint */
@@ -444,6 +482,7 @@
       body: JSON.stringify({
         name: name,
         email: email,
+        category: categoryInput ? categoryInput.value : '',
         answer: answer,
         source: window.location.href
       })
