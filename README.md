@@ -4,4 +4,3 @@
  - [Income comparison tool](https://bw-data-reporter.github.io/embed.graphics.io/graphics/income_compare_app_search_sparkline.html)
  - [Driving story callout](https://bw-data-reporter.github.io/embed.graphics.io/graphics/metro-detroit-driving.html)
  - [ShotSpotter outcome animation](https://bw-data-reporter.github.io/embed.graphics.io/graphics/detroit-pipeline.html)
- - [Metro Detroit driving reader feedback](https://bw-data-reporter.github.io/embed.graphics.io/graphics/metro-detroit-driving.html)
