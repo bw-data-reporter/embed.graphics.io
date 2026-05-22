@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AOD Parish Restructuring Finder</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+<style>
+/* ============================================
+   DESIGN TOKENS
+   ============================================ */
+:root, [data-theme="light"] {
+  --color-bg: #f5f4f0;
+  --color-surface: #f9f8f5;
+  --color-surface-2: #ffffff;
+  --color-surface-offset: #edeae5;
+  --color-divider: #dcd9d5;
+  --color-border: #d0cdc6;
+  --color-text: #1e1c17;
+  --color-text-muted: #6b6a66;
+  --color-text-faint: #b5b3ae;
+  --color-text-inverse: #f9f8f4;
+
+  /* Accent — deep burgundy/navy (Catholic, serious) */
+  --color-primary: #1a3a6e;
+  --color-primary-hover: #122b55;
+  --color-primary-active: #0c1f3c;
+  --color-primary-highlight: #d0d9e8;
+
+  /* Status colors */
+  --color-mass-yes: #2a6e3f;
+  --color-mass-yes-bg: #e6f4eb;
+  --color-mass-yes-border: #b7dcc4;
+
+  --color-mass-at-risk: #7a5500;
+  --color-mass-at-risk-bg: #fef6e6;
+  --color-mass-at-risk-border: #f0d699;
+
+  --color-mass-no: #922323;
+  --color-mass-no-bg: #fdeeed;
+  --color-mass-no-border: #e8b4b4;
+
+  --color-one-site: #3d5f8a;
+  --color-one-site-bg: #eaf0f8;
+  --color-one-site-border: #b5ccdf;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 3px rgba(20,18,10,0.08);
+  --shadow-md: 0 4px 14px rgba(20,18,10,0.10);
+  --shadow-lg: 0 12px 32px rgba(20,18,10,0.14);
+
+  --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem;
+  --space-4: 1rem; --space-5: 1.25rem; --space-6: 1.5rem;
+  --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem;
+
+  --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+  --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+  --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+  --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+  --text-2xl: clamp(2rem, 1.2rem + 2.5vw, 3.5rem);
+
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+
+  --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="dark"] {
+  --color-bg: #141210;
+  --color-surface: #1c1a18;
+  --color-surface-2: #221f1d;
+  --color-surface-offset: #1a1815;
+  --color-divider: #2a2824;
+  --color-border: #383430;
+  --color-text: #e0ddd8;
+  --color-text-muted: #8a8880;
+  --color-text-faint: #5a5855;
+  --color-text-inverse: #1e1c17;
+
+  --color-primary: #6b92c8;
+  --color-primary-hover: #8fadd4;
+  --color-primary-active: #b3c8e0;
+  --color-primary-highlight: #1e2c40;
+
+  --color-mass-yes: #5dab75;
+  --color-mass-yes-bg: #1a2e21;
+  --color-mass-yes-border: #2d5c3a;
+
+  --color-mass-at-risk: #c9933a;
+  --color-mass-at-risk-bg: #2a2010;
+  --color-mass-at-risk-border: #5a430c;
+
+  --color-mass-no: #d96060;
+  --color-mass-no-bg: #2a1515;
+  --color-mass-no-border: #6a2828;
+
+  --color-one-site: #7ba5cc;
+  --color-one-site-bg: #192230;
+  --color-one-site-border: #2d4562;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.25);
+  --shadow-md: 0 4px 14px rgba(0,0,0,0.35);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.45);
+}
+
+/* ============================================
+   BASE RESET
+   ============================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; font-size: 16px; }
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  color: var(--color-text);
+  background: var(--color-bg);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+img { display: block; max-width: 100%; height: auto; }
+button { cursor: pointer; background: none; border: none; font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; border-radius: var(--radius-sm); }
+
+/* ============================================
+   LAYOUT
+   ============================================ */
+.app-shell {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100dvh;
+}
+
+header {
+  background: var(--color-surface-2);
+  border-bottom: 1px solid var(--color-divider);
+  padding: var(--space-4) var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.logo-svg { color: var(--color-primary); flex-shrink: 0; }
+
+.brand-text h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  color: var(--color-primary);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.brand-text p {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: 1px;
+  max-width: none;
+}
+
+.theme-toggle {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  transition: background var(--transition), color var(--transition);
+}
+.theme-toggle:hover {
+  background: var(--color-surface-offset);
+  color: var(--color-text);
+}
+
+/* ============================================
+   MAIN CONTENT — two-pane layout
+   ============================================ */
+.main-content {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  overflow: hidden;
+  height: calc(100dvh - 65px);
+}
+
+.panel {
+  overflow-y: auto;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-divider);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Search section */
+.search-section {
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  border-bottom: 1px solid var(--color-divider);
+  background: var(--color-surface-2);
+}
+
+.search-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
+  display: block;
+}
+
+.search-hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-3);
+  line-height: 1.5;
+}
+
+.input-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.address-input {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  min-width: 0;
+}
+.address-input::placeholder { color: var(--color-text-faint); }
+.address-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-highlight);
+}
+
+.btn-search {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition: background var(--transition), transform 100ms;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-search:hover { background: var(--color-primary-hover); }
+.btn-search:active { transform: scale(0.98); }
+.btn-search:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.error-msg {
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-mass-no-bg);
+  border: 1px solid var(--color-mass-no-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  color: var(--color-mass-no);
+  display: none;
+}
+.error-msg.visible { display: block; }
+
+/* Results section */
+.results-section {
+  padding: var(--space-4) var(--space-5);
+  flex: 1;
+}
+
+.results-header {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-3);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-10) var(--space-4);
+  color: var(--color-text-muted);
+  gap: var(--space-3);
+}
+.empty-state-icon { color: var(--color-text-faint); }
+.empty-state h3 { font-family: var(--font-display); color: var(--color-text); font-size: var(--text-lg); }
+.empty-state p { font-size: var(--text-sm); max-width: 30ch; }
+
+/* Parish cards */
+.parish-card {
+  background: var(--color-surface-2);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  cursor: pointer;
+  transition: border-color var(--transition), box-shadow var(--transition), transform 120ms;
+  position: relative;
+}
+.parish-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.parish-card.selected {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-highlight);
+}
+
+.card-rank {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: 24px; height: 24px;
+  background: var(--color-surface-offset);
+  border-radius: var(--radius-full);
+  display: flex; align-items: center; justify-content: center;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.card-name {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 400;
+  color: var(--color-text);
+  margin-bottom: var(--space-1);
+  padding-right: var(--space-8);
+  line-height: 1.25;
+}
+
+.card-address {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-3);
+  line-height: 1.4;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+.distance-badge {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-primary);
+  background: var(--color-primary-highlight);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+}
+
+.planning-badge {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  background: var(--color-surface-offset);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+}
+
+/* Status pill */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-full);
+  border: 1px solid;
+}
+
+.status-pill.all-yes {
+  color: var(--color-mass-yes);
+  background: var(--color-mass-yes-bg);
+  border-color: var(--color-mass-yes-border);
+}
+.status-pill.at-risk {
+  color: var(--color-mass-at-risk);
+  background: var(--color-mass-at-risk-bg);
+  border-color: var(--color-mass-at-risk-border);
+}
+.status-pill.all-no {
+  color: var(--color-mass-no);
+  background: var(--color-mass-no-bg);
+  border-color: var(--color-mass-no-border);
+}
+.status-pill.one-site {
+  color: var(--color-one-site);
+  background: var(--color-one-site-bg);
+  border-color: var(--color-one-site-border);
+}
+
+/* Model grid in card */
+.model-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-1);
+}
+.model-cell {
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.model-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+.model-value {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.2;
+}
+.model-cell.yes { background: var(--color-mass-yes-bg); color: var(--color-mass-yes); }
+.model-cell.no { background: var(--color-mass-no-bg); color: var(--color-mass-no); }
+.model-cell.one { background: var(--color-one-site-bg); color: var(--color-one-site); }
+
+/* Legend */
+.legend {
+  border-top: 1px solid var(--color-divider);
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-surface-2);
+}
+.legend-title {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-2);
+}
+.legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   MAP PANE
+   ============================================ */
+#map {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Custom Leaflet marker overrides */
+.custom-marker {
+  width: 32px; height: 32px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 2px solid white;
+  box-shadow: var(--shadow-md);
+  display: flex; align-items: center; justify-content: center;
+}
+.marker-inner {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: white;
+  transform: rotate(45deg);
+}
+
+/* Leaflet popup override */
+.leaflet-popup-content-wrapper {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
+  padding: 0 !important;
+  background: var(--color-surface-2) !important;
+  border: 1.5px solid var(--color-border) !important;
+  overflow: hidden;
+}
+.leaflet-popup-content {
+  margin: 0 !important;
+  width: 280px !important;
+}
+.leaflet-popup-tip {
+  background: var(--color-surface-2) !important;
+}
+.popup-body {
+  padding: var(--space-4);
+}
+.popup-name {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  color: var(--color-text);
+  margin-bottom: var(--space-1);
+  line-height: 1.2;
+}
+.popup-address {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-3);
+}
+.popup-model-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+  margin-top: var(--space-2);
+}
+
+/* Map attribution override */
+.leaflet-control-attribution {
+  font-size: 10px !important;
+  background: rgba(255,255,255,0.75) !important;
+  backdrop-filter: blur(4px);
+}
+
+/* Loading overlay */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
+  display: none;
+}
+.loading-overlay.visible { display: flex; }
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================
+   MOBILE RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  .main-content {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 50vh;
+    height: auto;
+    overflow: visible;
+  }
+  .panel {
+    border-right: none;
+    border-bottom: 1px solid var(--color-divider);
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+  #map { height: 50vh; }
+  header { padding: var(--space-3) var(--space-4); }
+  .brand-text p { display: none; }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-bg: #141210;
+    --color-surface: #1c1a18;
+    --color-surface-2: #221f1d;
+    --color-surface-offset: #1a1815;
+    --color-divider: #2a2824;
+    --color-border: #383430;
+    --color-text: #e0ddd8;
+    --color-text-muted: #8a8880;
+    --color-text-faint: #5a5855;
+    --color-text-inverse: #1e1c17;
+    --color-primary: #6b92c8;
+    --color-primary-hover: #8fadd4;
+    --color-primary-active: #b3c8e0;
+    --color-primary-highlight: #1e2c40;
+    --color-mass-yes: #5dab75;
+    --color-mass-yes-bg: #1a2e21;
+    --color-mass-yes-border: #2d5c3a;
+    --color-mass-at-risk: #c9933a;
+    --color-mass-at-risk-bg: #2a2010;
+    --color-mass-at-risk-border: #5a430c;
+    --color-mass-no: #d96060;
+    --color-mass-no-bg: #2a1515;
+    --color-mass-no-border: #6a2828;
+    --color-one-site: #7ba5cc;
+    --color-one-site-bg: #192230;
+    --color-one-site-border: #2d4562;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.25);
+    --shadow-md: 0 4px 14px rgba(0,0,0,0.35);
+    --shadow-lg: 0 12px 32px rgba(0,0,0,0.45);
+  }
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+<!-- HEADER -->
+<header>
+  <div class="header-brand">
+    <svg class="logo-svg" width="36" height="36" viewBox="0 0 36 36" fill="none" aria-label="Archdiocese of Detroit Parish Finder">
+      <circle cx="18" cy="18" r="16" stroke="currentColor" stroke-width="1.5" fill="none"/>
+      <rect x="16.25" y="7" width="3.5" height="14" rx="1" fill="currentColor"/>
+      <rect x="11" y="12.25" width="14" height="3.5" rx="1" fill="currentColor"/>
+      <circle cx="18" cy="26" r="2.5" fill="currentColor" opacity="0.35"/>
+    </svg>
+    <div class="brand-text">
+      <h1>AOD Parish Finder</h1>
+      <p>Archdiocese of Detroit · Restructuring Plans 2025</p>
+    </div>
+  </div>
+  <button class="theme-toggle" data-theme-toggle aria-label="Toggle dark mode">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+  </button>
+</header>
+
+<!-- MAIN -->
+<div class="main-content">
+
+  <!-- LEFT PANEL -->
+  <aside class="panel">
+    <!-- Search -->
+    <div class="search-section">
+      <label class="search-label" for="address-input">Find parishes near you</label>
+      <p class="search-hint">Enter a Detroit-area address to see the closest parishes and any planned changes to their Mass schedule.</p>
+      <div class="input-row">
+        <input
+          id="address-input"
+          class="address-input"
+          type="text"
+          placeholder="e.g. 2 Woodward Ave, Detroit"
+          autocomplete="street-address"
+          aria-label="Street address"
+        />
+        <button class="btn-search" id="search-btn" aria-label="Search">Search</button>
+      </div>
+      <div class="error-msg" id="error-msg" role="alert"></div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-section" id="results-section">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-state-icon"><i data-lucide="map-pin" style="width:40px;height:40px;"></i></div>
+        <h3>Enter your address</h3>
+        <p>We'll show the 4 nearest parishes and their planned status under each restructuring model.</p>
+      </div>
+      <div id="parish-cards" style="display:none;"></div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-title">Map Legend</div>
+      <div class="legend-items">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#2a6e3f;"></div>
+          Mass continues in all models
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#7a5500;"></div>
+          Mass at risk in at least one model
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#922323;"></div>
+          Mass stops in all models
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#3d5f8a;"></div>
+          One-site parish (one building loses Mass)
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#777;"></div>
+          Location searched
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAP -->
+  <main>
+    <div id="map" role="region" aria-label="Parish map"></div>
+  </main>
+</div>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading" aria-live="polite">
+  <div class="spinner"></div>
+</div>
+
+<script>
+// ============================================
+// PARISH DATA
+// ============================================
+const PARISHES = [
+  { pa: 2, city: "Detroit", name: "St. Cunegunda", addr: "5900 Saint Lawrence St, Detroit, MI 48210", lat: 42.336442, lng: -83.147057, planA: "No Saturday Vigil/Sunday Mass", planB: "No Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in all models" },
+  { pa: 2, city: "Detroit", name: "Most Holy Trinity", addr: "1050 Porter St, Detroit, MI 48226", lat: 42.329816, lng: -83.060482, planA: "Saturday Vigil/Sunday Mass", planB: "Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in at least one model" },
+  { pa: 2, city: "Detroit", name: "St. Francis D'Assisi (St. Francis D'Assisi-St. Hedwig Parish)", addr: "4500 Wesson St, Detroit, MI 48210", lat: 42.334296, lng: -83.117620, planA: "One site", planB: "One site", planC: "One site", overall: "One site in all models" },
+  { pa: 2, city: "Detroit", name: "St. Hedwig (St. Francis D'Assisi-St. Hedwig Parish)", addr: "3245 Junction St, Detroit, MI 48210", lat: 42.327710, lng: -83.109849, planA: "One site", planB: "One site", planC: "One site", overall: "One site in all models" },
+  { pa: 2, city: "Detroit", name: "Our Lady of Guadalupe", addr: "4329 Central St, Detroit, MI 48210", lat: 42.327266, lng: -83.135017, planA: "Saturday Vigil/Sunday Mass", planB: "Saturday Vigil/Sunday Mass", planC: "Saturday Vigil/Sunday Mass", overall: "Mass in all models" },
+  { pa: 3, city: "Detroit", name: "St. John Paul II", addr: "5830 Simon K, Detroit, MI 48212", lat: 42.414720, lng: -83.043890, planA: "No Saturday Vigil/Sunday Mass", planB: "No Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in all models" },
+  { pa: 3, city: "Hamtramck", name: "Our Lady Queen of Apostles", addr: "3851 Prescott St, Hamtramck, MI 48212", lat: 42.403630, lng: -83.052578, planA: "No Saturday Vigil/Sunday Mass", planB: "No Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in all models" },
+  { pa: 3, city: "Detroit", name: "Holy Family", addr: "641 Chrysler Dr, Detroit, MI 48226", lat: 42.333884, lng: -83.037380, planA: "No Saturday Vigil/Sunday Mass", planB: "No Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in all models" },
+  { pa: 3, city: "Detroit", name: "St. Elizabeth", addr: "3138 E Canfield St, Detroit, MI 48207", lat: 42.363333, lng: -83.032474, planA: "No Saturday Vigil/Sunday Mass", planB: "No Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in all models" },
+  { pa: 3, city: "Detroit", name: "St. Hyacinth", addr: "3151 Farnsworth St, Detroit, MI 48211", lat: 42.369397, lng: -83.036428, planA: "No Saturday Vigil/Sunday Mass", planB: "No Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in all models" },
+  { pa: 3, city: "Detroit", name: "St. Augustine & St. Monica", addr: "4151 Seminole St, Detroit, MI 48214", lat: 42.371230, lng: -83.005529, planA: "Saturday Vigil/Sunday Mass", planB: "No Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in at least one model" },
+  { pa: 3, city: "Detroit", name: "St. Jude", addr: "15889 E Seven Mile Rd, Detroit, MI 48205", lat: 42.436100, lng: -82.956300, planA: "No Saturday Vigil/Sunday Mass", planB: "No Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in all models" },
+  { pa: 3, city: "Detroit", name: "St. Raymond-Our Lady of Good Counsel", addr: "20103 Joann Ave, Detroit, MI 48205", lat: 42.445300, lng: -82.991100, planA: "No Saturday Vigil/Sunday Mass", planB: "Saturday Vigil/Sunday Mass", planC: "Saturday Vigil/Sunday Mass", overall: "No in at least one model" },
+  { pa: 3, city: "Detroit", name: "Our Lady Queen of Heaven", addr: "8200 Rolyat St, Detroit, MI 48234", lat: 42.439129, lng: -83.021732, planA: "No Saturday Vigil/Sunday Mass", planB: "No Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in all models" },
+  { pa: 4, city: "Melvindale", name: "St. Mary Magdalen", addr: "19624 Wood St, Melvindale, MI 48122", lat: 42.274826, lng: -83.196005, planA: "No Saturday Vigil/Sunday Mass", planB: "No Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in all models" },
+  { pa: 4, city: "Taylor", name: "St. Alfred", addr: "24175 Baske St, Taylor, MI 48180", lat: 42.238823, lng: -83.271531, planA: "No Saturday Vigil/Sunday Mass", planB: "No Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in all models" },
+  { pa: 4, city: "Taylor", name: "St. Constance", addr: "21333 Kinyon St, Taylor, MI 48180", lat: 42.234307, lng: -83.244987, planA: "No Saturday Vigil/Sunday Mass", planB: "No Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in all models" },
+  { pa: 4, city: "Lincoln Park", name: "Christ the Good Shepherd", addr: "1540 Riverbank St, Lincoln Park, MI 48146", lat: 42.229639, lng: -83.185400, planA: "Saturday Vigil/Sunday Mass", planB: "Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in at least one model" },
+  { pa: 4, city: "Wyandotte", name: "Our Lady of the Scapular", addr: "976 Pope John Paul II Ave, Wyandotte, MI 48192", lat: 42.206251, lng: -83.164688, planA: "Saturday Vigil/Sunday Mass", planB: "Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in at least one model" },
+  { pa: 4, city: "Riverview", name: "St. Cyprian", addr: "13249 Pennsylvania Rd, Riverview, MI 48193", lat: 42.184862, lng: -83.185946, planA: "No Saturday Vigil/Sunday Mass", planB: "No Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in all models" },
+  { pa: 4, city: "Flat Rock", name: "St. Roch", addr: "25022 Gibraltar Rd, Flat Rock, MI 48134", lat: 42.094653, lng: -83.274830, planA: "Saturday Vigil/Sunday Mass", planB: "Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in at least one model" },
+  { pa: 5, city: "Temperance", name: "St. Anthony", addr: "4605 St. Anthony Rd, Temperance, MI 48182", lat: 41.769000, lng: -83.571000, planA: "Saturday Vigil/Sunday Mass", planB: "Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in at least one model" },
+  { pa: 5, city: "Erie", name: "St. Joseph", addr: "2214 Manhattan St, Erie, MI 48133", lat: 41.792563, lng: -83.495024, planA: "No Saturday Vigil/Sunday Mass", planB: "No Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in all models" },
+  { pa: 5, city: "Monroe", name: "St. John the Baptist", addr: "511 S Monroe St, Monroe, MI 48161", lat: 41.911581, lng: -83.401606, planA: "No Saturday Vigil/Sunday Mass", planB: "Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in at least one model" },
+  { pa: 5, city: "Monroe", name: "St. Anne", addr: "2420 N Dixie Hwy, Monroe, MI 48162", lat: 41.934502, lng: -83.333422, planA: "No Saturday Vigil/Sunday Mass", planB: "No Saturday Vigil/Sunday Mass", planC: "No Saturday Vigil/Sunday Mass", overall: "No in all models" }
+];
+
+// ============================================
+// HELPERS
+// ============================================
+function getStatusClass(overall) {
+  if (overall === "Mass in all models") return "all-yes";
+  if (overall === "No in at least one model") return "at-risk";
+  if (overall === "No in all models") return "all-no";
+  if (overall.startsWith("One site")) return "one-site";
+  return "at-risk";
+}
+
+function getStatusLabel(overall) {
+  if (overall === "Mass in all models") return "Mass in all 3 models";
+  if (overall === "No in at least one model") return "At risk in ≥1 model";
+  if (overall === "No in all models") return "No Mass in all 3 models";
+  if (overall.startsWith("One site")) return "One site loses Mass";
+  return overall;
+}
+
+function getMarkerColor(overall) {
+  if (overall === "Mass in all models") return "#2a6e3f";
+  if (overall === "No in at least one model") return "#7a5500";
+  if (overall === "No in all models") return "#922323";
+  if (overall.startsWith("One site")) return "#3d5f8a";
+  return "#666";
+}
+
+function getPlanClass(plan) {
+  if (plan === "Saturday Vigil/Sunday Mass") return "yes";
+  if (plan === "One site") return "one";
+  return "no";
+}
+
+function getPlanShort(plan) {
+  if (plan === "Saturday Vigil/Sunday Mass") return "Mass";
+  if (plan === "One site") return "One site";
+  return "No Mass";
+}
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.asin(Math.sqrt(a));
+}
+
+function kmToMiles(km) { return km * 0.621371; }
+
+function createDivIcon(color) {
+  return L.divIcon({
+    html: `<div style="width:22px;height:22px;background:${color};border-radius:50%;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.35);"></div>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    className: ''
+  });
+}
+
+function createUserIcon() {
+  return L.divIcon({
+    html: `<div style="width:18px;height:18px;background:#555;border-radius:50%;border:2.5px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.4);position:relative;">
+      <div style="width:36px;height:36px;border:2px solid rgba(85,85,85,0.25);border-radius:50%;position:absolute;top:-11px;left:-11px;"></div>
+    </div>`,
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+    className: ''
+  });
+}
+
+// ============================================
+// MAP SETUP
+// ============================================
+const map = L.map('map', { zoomControl: true, attributionControl: true });
+map.setView([42.35, -83.05], 11);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+  maxZoom: 19
+}).addTo(map);
+
+// Place all parish markers
+const allMarkers = [];
+PARISHES.forEach((p, i) => {
+  const color = getMarkerColor(p.overall);
+  const marker = L.marker([p.lat, p.lng], { icon: createDivIcon(color) }).addTo(map);
+
+  const popupHtml = `
+    <div class="popup-body">
+      <div class="popup-name">${p.name}</div>
+      <div class="popup-address">${p.addr}</div>
+      <div style="margin-bottom:6px;">
+        <span class="status-pill ${getStatusClass(p.overall)}">${getStatusLabel(p.overall)}</span>
+      </div>
+      <div class="popup-model-grid">
+        <div class="model-cell ${getPlanClass(p.planA)}"><div class="model-label">Model A</div><div class="model-value">${getPlanShort(p.planA)}</div></div>
+        <div class="model-cell ${getPlanClass(p.planB)}"><div class="model-label">Model B</div><div class="model-value">${getPlanShort(p.planB)}</div></div>
+        <div class="model-cell ${getPlanClass(p.planC)}"><div class="model-label">Model C</div><div class="model-value">${getPlanShort(p.planC)}</div></div>
+      </div>
+    </div>`;
+
+  marker.bindPopup(popupHtml, { maxWidth: 300 });
+  allMarkers.push({ marker, parish: p, index: i });
+});
+
+let userMarker = null;
+let searchCircle = null;
+
+// ============================================
+// SEARCH LOGIC
+// ============================================
+let selectedCardIndex = null;
+
+async function geocodeAddress(address) {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address + ', Michigan')}&format=json&limit=1&countrycodes=us`;
+  const res = await fetch(url, { headers: { 'User-Agent': 'AOD-Parish-Finder/1.0' } });
+  const data = await res.json();
+  if (!data || data.length === 0) throw new Error('Address not found. Try adding a city name, e.g. "123 Main St, Detroit".');
+  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), display: data[0].display_name };
+}
+
+function renderResults(userLat, userLng, nearest) {
+  const container = document.getElementById('parish-cards');
+  const emptyState = document.getElementById('empty-state');
+
+  emptyState.style.display = 'none';
+  container.style.display = 'block';
+  container.innerHTML = '';
+
+  nearest.forEach((item, idx) => {
+    const p = item.parish;
+    const miles = kmToMiles(item.dist).toFixed(1);
+
+    const card = document.createElement('div');
+    card.className = 'parish-card';
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('aria-label', `${p.name}, ${miles} miles away`);
+
+    card.innerHTML = `
+      <div class="card-rank">${idx + 1}</div>
+      <div class="card-name">${p.name}</div>
+      <div class="card-address">${p.addr}</div>
+      <div class="card-meta">
+        <span class="distance-badge">${miles} mi away</span>
+        <span class="planning-badge">Area ${p.pa} · ${p.city}</span>
+      </div>
+      <div style="margin-bottom:var(--space-3);">
+        <span class="status-pill ${getStatusClass(p.overall)}">${getStatusLabel(p.overall)}</span>
+      </div>
+      <div class="model-grid">
+        <div class="model-cell ${getPlanClass(p.planA)}"><div class="model-label">Model A</div><div class="model-value">${getPlanShort(p.planA)}</div></div>
+        <div class="model-cell ${getPlanClass(p.planB)}"><div class="model-label">Model B</div><div class="model-value">${getPlanShort(p.planB)}</div></div>
+        <div class="model-cell ${getPlanClass(p.planC)}"><div class="model-label">Model C</div><div class="model-value">${getPlanShort(p.planC)}</div></div>
+      </div>`;
+
+    card.addEventListener('click', () => selectCard(idx, item));
+    card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') selectCard(idx, item); });
+    container.appendChild(card);
+  });
+}
+
+function selectCard(idx, item) {
+  // Deselect previous
+  document.querySelectorAll('.parish-card').forEach((c, i) => {
+    c.classList.toggle('selected', i === idx);
+  });
+  selectedCardIndex = idx;
+
+  // Pan map and open popup
+  map.flyTo([item.parish.lat, item.parish.lng], 15, { duration: 0.8 });
+  const markerObj = allMarkers.find(m => m.index === item.originalIndex);
+  if (markerObj) {
+    setTimeout(() => markerObj.marker.openPopup(), 600);
+  }
+}
+
+async function doSearch() {
+  const input = document.getElementById('address-input');
+  const errorEl = document.getElementById('error-msg');
+  const btn = document.getElementById('search-btn');
+  const loadingEl = document.getElementById('loading');
+
+  const address = input.value.trim();
+  if (!address) {
+    errorEl.textContent = 'Please enter an address.';
+    errorEl.classList.add('visible');
+    return;
+  }
+
+  errorEl.classList.remove('visible');
+  btn.disabled = true;
+  btn.textContent = 'Searching…';
+  loadingEl.classList.add('visible');
+
+  try {
+    const { lat, lng } = await geocodeAddress(address);
+
+    // Calculate distances
+    const withDist = PARISHES.map((p, i) => ({
+      parish: p,
+      originalIndex: i,
+      dist: haversineKm(lat, lng, p.lat, p.lng)
+    })).sort((a, b) => a.dist - b.dist).slice(0, 4);
+
+    // Update map
+    if (userMarker) map.removeLayer(userMarker);
+    if (searchCircle) map.removeLayer(searchCircle);
+
+    userMarker = L.marker([lat, lng], { icon: createUserIcon() })
+      .addTo(map)
+      .bindPopup('<div style="padding:8px;font-family:var(--font-body);font-size:13px;font-weight:600;color:var(--color-text);">📍 Your location</div>');
+
+    const maxDistKm = withDist[withDist.length - 1].dist * 1.1;
+    searchCircle = L.circle([lat, lng], {
+      radius: maxDistKm * 1000,
+      color: '#1a3a6e',
+      fillColor: '#1a3a6e',
+      fillOpacity: 0.03,
+      weight: 1.5,
+      dashArray: '5, 5'
+    }).addTo(map);
+
+    // Fit bounds
+    const bounds = L.latLngBounds([[lat, lng]]);
+    withDist.forEach(d => bounds.extend([d.parish.lat, d.parish.lng]));
+    map.fitBounds(bounds.pad(0.25));
+
+    renderResults(lat, lng, withDist);
+
+  } catch (err) {
+    errorEl.textContent = err.message || 'Could not find that address. Please try again.';
+    errorEl.classList.add('visible');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Search';
+    loadingEl.classList.remove('visible');
+  }
+}
+
+// Event listeners
+document.getElementById('search-btn').addEventListener('click', doSearch);
+document.getElementById('address-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') doSearch();
+});
+
+// Dark mode toggle
+(function() {
+  const t = document.querySelector('[data-theme-toggle]');
+  const r = document.documentElement;
+  let d = matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
+  r.setAttribute('data-theme', d);
+  if (t) {
+    t.addEventListener('click', () => {
+      d = d === 'dark' ? 'light' : 'dark';
+      r.setAttribute('data-theme', d);
+      t.setAttribute('aria-label', 'Switch to ' + (d === 'dark' ? 'light' : 'dark') + ' mode');
+      t.innerHTML = d === 'dark'
+        ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
+        : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    });
+  }
+})();
+
+// Initialize Lucide icons
+lucide.createIcons();
+</script>
+</body>
+</html>
