@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detroit Archdiocese — Parish Mass Lookup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Design tokens ── */
+:root{
+  --color-bg:#f4f4f4;
+  --color-surface:#f9f9f9;
+  --color-surface-2:#ffffff;
+  --color-surface-offset:#ebebeb;
+  --color-border:#d0d0d0;
+  --color-divider:#e5e5e5;
+  --color-text:#1a1a1a;
+  --color-text-muted:#808080;
+  --color-text-faint:#b0b0b0;
+  --color-primary:#9b2222;
+  --color-primary-hover:#7a1a1a;
+  --color-primary-light:#f9eaea;
+  --color-gold:#b5810a;
+  --color-gold-light:#fdf4e0;
+  --color-green:#2a6b3a;
+  --color-green-light:#e6f2e8;
+  --color-orange:#b54a0a;
+  --color-orange-light:#fdf0e6;
+  --color-blue:#1a5080;
+  --color-blue-light:#e6f0f8;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.08);
+  --shadow-md:0 4px 14px rgba(0,0,0,.10);
+  --shadow-lg:0 10px 32px rgba(0,0,0,.14);
+  --radius-sm:6px;
+  --radius-md:10px;
+  --radius-lg:16px;
+  --radius-full:9999px;
+  --font-display:'Source Sans Pro','Helvetica Neue',sans-serif;
+  --font-body:'Source Sans Pro','Helvetica Neue',sans-serif;
+  --text-xs:clamp(.75rem,.7rem + .25vw,.875rem);
+  --text-sm:clamp(.9rem,.85rem + .25vw,1rem);
+  --text-base:clamp(1rem,.95rem + .25vw,1.125rem);
+  --text-lg:clamp(1.15rem,1rem + .75vw,1.5rem);
+  --text-xl:clamp(1.5rem,1.2rem + 1.25vw,2.1rem);
+  --text-2xl:clamp(2rem,1.4rem + 2vw,2.8rem);
+  --space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;
+  --space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;
+  --space-12:3rem;--space-16:4rem;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:none;text-size-adjust:none;scroll-behavior:smooth}
+body{
+  min-height:100dvh;font-family:var(--font-body);font-size:var(--text-base);
+  color:var(--color-text);background:var(--color-bg);line-height:1.6;
+}
+img,svg{display:block;max-width:100%}
+button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
+a,button,[role="button"],input{
+  transition:color 180ms,background 180ms,border-color 180ms,box-shadow 180ms,opacity 180ms;
+}
+:focus-visible{outline:3px solid var(--color-primary);outline-offset:3px;border-radius:var(--radius-sm)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* ── Layout ── */
+.header{
+  background:var(--color-primary);
+  color:#fff;
+  padding:var(--space-6) var(--space-6);
+  display:flex;align-items:center;justify-content:space-between;
+  gap:var(--space-4);
+}
+.header-brand{display:flex;align-items:center;gap:var(--space-4)}
+.header-logo{
+  width:48px;height:48px;flex-shrink:0;
+}
+.header-title{
+  font-family:var(--font-display);
+  font-size:var(--text-lg);
+  font-weight:700;
+  line-height:1.2;
+  color:#fff;
+}
+.header-subtitle{font-size:var(--text-sm);opacity:.85;margin-top:2px}
+
+
+
+.main{
+  max-width:860px;
+  margin-inline:auto;
+  padding:var(--space-8) var(--space-6) var(--space-12);
+}
+
+/* ── Search section ── */
+.search-card{
+  background:var(--color-surface-2);
+  border:1.5px solid var(--color-border);
+  border-radius:var(--radius-lg);
+  padding:var(--space-8) var(--space-8);
+  box-shadow:var(--shadow-md);
+  margin-bottom:var(--space-8);
+}
+.search-label{
+  display:block;
+  font-family:var(--font-display);
+  font-size:var(--text-lg);
+  font-weight:600;
+  margin-bottom:var(--space-5);
+  color:var(--color-text);
+}
+.search-tabs{
+  display:flex;gap:var(--space-3);
+  margin-bottom:var(--space-6);
+  flex-wrap:wrap;
+}
+.tab-btn{
+  padding:var(--space-3) var(--space-6);
+  border-radius:var(--radius-full);
+  font-size:var(--text-base);
+  font-weight:600;
+  border:2px solid var(--color-border);
+  background:var(--color-surface);
+  color:var(--color-text-muted);
+  min-height:52px;
+}
+.tab-btn.active{
+  background:var(--color-primary);
+  color:#fff;
+  border-color:var(--color-primary);
+}
+.tab-btn:hover:not(.active){
+  border-color:var(--color-primary);
+  color:var(--color-primary);
+}
+
+.input-wrap{position:relative;margin-bottom:var(--space-5)}
+.search-input{
+  width:100%;
+  padding:var(--space-4) var(--space-5);
+  font-size:var(--text-lg);
+  border:2px solid var(--color-border);
+  border-radius:var(--radius-md);
+  background:var(--color-bg);
+  color:var(--color-text);
+  outline:none;
+  line-height:1.4;
+}
+.search-input:focus{border-color:var(--color-primary);box-shadow:0 0 0 4px color-mix(in oklch,var(--color-primary) 15%,transparent)}
+.search-input::placeholder{color:var(--color-text-faint)}
+
+.suggestions-box{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;
+  background:var(--color-surface-2);
+  border:2px solid var(--color-primary);
+  border-radius:var(--radius-md);
+  box-shadow:var(--shadow-lg);
+  z-index:100;
+  max-height:280px;overflow-y:auto;
+  display:none;
+}
+.suggestions-box.open{display:block}
+.suggestion-item{
+  padding:var(--space-4) var(--space-5);
+  cursor:pointer;
+  font-size:var(--text-base);
+  border-bottom:1px solid var(--color-divider);
+  display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);
+}
+.suggestion-item:last-child{border-bottom:none}
+.suggestion-item:hover,.suggestion-item.focused{background:var(--color-primary-light);color:var(--color-primary)}
+.suggestion-city{font-size:var(--text-sm);color:var(--color-text-faint)}
+
+.search-btn{
+  width:100%;
+  padding:var(--space-4) var(--space-6);
+  font-size:var(--text-lg);
+  font-weight:700;
+  background:var(--color-primary);
+  color:#fff;
+  border-radius:var(--radius-md);
+  border:none;
+  min-height:60px;
+  letter-spacing:.02em;
+}
+.search-btn:hover{background:var(--color-primary-hover)}
+.search-btn:active{transform:scale(.99)}
+
+/* ── Results ── */
+.results-section{display:none}
+.results-section.visible{display:block}
+
+.results-header{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:var(--space-4);
+  margin-bottom:var(--space-6);
+}
+.results-title{
+  font-family:var(--font-display);
+  font-size:var(--text-xl);
+  font-weight:700;
+  color:var(--color-text);
+}
+.results-count{
+  font-size:var(--text-sm);
+  color:var(--color-text-muted);
+  background:var(--color-surface-offset);
+  padding:var(--space-2) var(--space-4);
+  border-radius:var(--radius-full);
+}
+.clear-btn{
+  padding:var(--space-3) var(--space-5);
+  font-size:var(--text-base);
+  font-weight:600;
+  border:2px solid var(--color-border);
+  border-radius:var(--radius-full);
+  color:var(--color-text-muted);
+  min-height:48px;
+}
+.clear-btn:hover{border-color:var(--color-primary);color:var(--color-primary)}
+
+/* ── Parish card ── */
+.parish-card{
+  background:var(--color-surface-2);
+  border:1.5px solid var(--color-border);
+  border-radius:var(--radius-lg);
+  padding:var(--space-6) var(--space-6);
+  box-shadow:var(--shadow-sm);
+  margin-bottom:var(--space-5);
+  transition:box-shadow 180ms;
+}
+.parish-card:hover{box-shadow:var(--shadow-md)}
+
+.parish-header{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:var(--space-4);
+  margin-bottom:var(--space-5);
+  padding-bottom:var(--space-4);
+  border-bottom:1.5px solid var(--color-divider);
+}
+.parish-name{
+  font-family:var(--font-display);
+  font-size:var(--text-lg);
+  font-weight:700;
+  color:var(--color-text);
+  line-height:1.3;
+}
+.parish-location{
+  font-size:var(--text-sm);
+  color:var(--color-text-muted);
+  margin-top:var(--space-1);
+}
+.parish-area{
+  font-size:var(--text-xs);
+  color:var(--color-text-faint);
+  background:var(--color-surface-offset);
+  padding:var(--space-1) var(--space-3);
+  border-radius:var(--radius-full);
+  white-space:nowrap;
+  flex-shrink:0;
+}
+
+/* Overall status badge */
+.overall-badge{
+  display:inline-flex;align-items:center;gap:var(--space-2);
+  font-size:var(--text-base);font-weight:700;
+  padding:var(--space-2) var(--space-5);
+  border-radius:var(--radius-full);
+  margin-bottom:var(--space-5);
+}
+.overall-badge.green{background:var(--color-green-light);color:var(--color-green)}
+.overall-badge.red{background:var(--color-primary-light);color:var(--color-primary)}
+.overall-badge.orange{background:var(--color-orange-light);color:var(--color-orange)}
+.overall-badge.blue{background:var(--color-blue-light);color:var(--color-blue)}
+.badge-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;background:currentColor}
+
+/* Plans grid */
+.plans-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(min(170px,100%),1fr));
+  gap:var(--space-3);
+}
+.plan-item{
+  background:var(--color-surface);
+  border:1.5px solid var(--color-border);
+  border-radius:var(--radius-md);
+  padding:var(--space-3) var(--space-4);
+  text-align:center;
+}
+.plan-label{
+  font-size:var(--text-xs);
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.07em;
+  color:var(--color-text-faint);
+  margin-bottom:var(--space-2);
+}
+.plan-value{
+  font-size:var(--text-sm);
+  font-weight:600;
+  line-height:1.3;
+}
+.plan-value.has-mass{color:var(--color-green)}
+.plan-value.no-mass{color:var(--color-primary)}
+.plan-value.one-site{color:var(--color-blue)}
+.plan-value.no-plan{color:var(--color-text-faint);font-weight:400}
+
+/* ── No results ── */
+.no-results{
+  text-align:center;
+  padding:var(--space-12) var(--space-8);
+  color:var(--color-text-muted);
+}
+.no-results-icon{font-size:3rem;margin-bottom:var(--space-4)}
+.no-results h3{font-family:var(--font-display);font-size:var(--text-lg);color:var(--color-text);margin-bottom:var(--space-3)}
+
+/* ── Legend ── */
+.legend{
+  background:var(--color-surface);
+  border:1.5px solid var(--color-border);
+  border-radius:var(--radius-lg);
+  padding:var(--space-6);
+  margin-bottom:var(--space-8);
+}
+.legend-title{
+  font-family:var(--font-display);
+  font-size:var(--text-base);
+  font-weight:700;
+  margin-bottom:var(--space-4);
+  color:var(--color-text);
+}
+.legend-items{display:flex;flex-wrap:wrap;gap:var(--space-4) var(--space-6)}
+.legend-item{display:flex;align-items:center;gap:var(--space-2);font-size:var(--text-sm)}
+.legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.legend-dot.green{background:var(--color-green)}
+.legend-dot.red{background:var(--color-primary)}
+.legend-dot.orange{background:var(--color-orange)}
+.legend-dot.blue{background:var(--color-blue)}
+
+/* ── Responsive ── */
+@media(max-width:600px){
+  .header{padding:var(--space-5)}
+  .main{padding:var(--space-5) var(--space-4) var(--space-10)}
+  .search-card{padding:var(--space-6) var(--space-5)}
+  .parish-header{flex-direction:column;gap:var(--space-2)}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-brand">
+    <!-- Cross SVG logo -->
+    <svg class="header-logo" viewBox="0 0 48 48" fill="none" aria-label="Cross" xmlns="http://www.w3.org/2000/svg">
+      <rect x="20" y="6" width="8" height="36" rx="3" fill="rgba(255,255,255,0.9)"/>
+      <rect x="8" y="17" width="32" height="8" rx="3" fill="rgba(255,255,255,0.9)"/>
+      <rect x="20" y="6" width="8" height="36" rx="3" fill="rgba(255,255,255,0.15)"/>
+    </svg>
+    <div>
+      <div class="header-title">Archdiocese of Detroit</div>
+      <div class="header-subtitle">Weekend Mass Planning Models — Parish Lookup</div>
+    </div>
+  </div>
+  
+</header>
+
+<main class="main">
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-title">How to Read Results</div>
+    <div class="legend-items">
+      <div class="legend-item"><span class="legend-dot green"></span> Not impacted — Mass in all models</div>
+      <div class="legend-item"><span class="legend-dot red"></span> No Mass in all models</div>
+      <div class="legend-item"><span class="legend-dot orange"></span> No Mass in at least one model</div>
+      <div class="legend-item"><span class="legend-dot blue"></span> One site used across models (merged parishes)</div>
+    </div>
+  </div>
+
+  <!-- Search card -->
+  <div class="search-card">
+    <label class="search-label">Search for a Parish or City</label>
+
+    <div class="search-tabs" role="tablist" aria-label="Search by">
+      <button class="tab-btn active" id="tab-parish" role="tab" aria-selected="true" data-mode="parish" onclick="switchTab('parish')">
+        By Parish Name
+      </button>
+      <button class="tab-btn" id="tab-city" role="tab" aria-selected="false" data-mode="city" onclick="switchTab('city')">
+        By City / Town
+      </button>
+    </div>
+
+    <div class="input-wrap">
+      <input
+        type="text"
+        id="searchInput"
+        class="search-input"
+        placeholder="Type a parish name…"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+        aria-label="Search"
+        aria-autocomplete="list"
+        aria-controls="suggestions"
+        oninput="onInput()"
+        onkeydown="onKeyDown(event)"
+      >
+      <div class="suggestions-box" id="suggestions" role="listbox" aria-label="Suggestions"></div>
+    </div>
+
+    <button class="search-btn" onclick="doSearch()">
+      🔍 &nbsp; Search
+    </button>
+  </div>
+
+  <!-- Results -->
+  <div class="results-section" id="resultsSection">
+    <div class="results-header">
+      <div>
+        <div class="results-title" id="resultsTitle"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:var(--space-3)">
+        <span class="results-count" id="resultsCount"></span>
+        <button class="clear-btn" onclick="clearResults()">✕ &nbsp;Clear</button>
+      </div>
+    </div>
+    <div id="resultsList"></div>
+  </div>
+
+</main>
+
+<script>
+// ── Data ──
+const DATA = [{"area":1,"city":"Detroit","name":"Blessed Sacrament Cathedral","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":1,"city":"Detroit","name":"Christ the King","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":1,"city":"Detroit","name":"Corpus Christi","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":1,"city":"Detroit","name":"Gesu","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":1,"city":"Detroit","name":"Presentation/Our Lady of Victory","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":1,"city":"Detroit","name":"SS. Peter and Paul (Jesuit)","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":1,"city":"Detroit","name":"SS. Peter and Paul (Westside)","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":1,"city":"Detroit","name":"St. Charles Lwanga Church (Christ the King)","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in all models"},{"area":1,"city":"Detroit","name":"St. Mary of Redford","planA":"No Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":1,"city":"Detroit","name":"St. Moses the Black","planA":"No Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":1,"city":"Detroit","name":"St. Peter Claver","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in all models"},{"area":1,"city":"Detroit","name":"St. Scholastica","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in all models"},{"area":1,"city":"Detroit","name":"St. Suzanne - Our Lady Gate of Heaven","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in all models"},{"area":2,"city":"Detroit","name":"Holy Cross","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":2,"city":"Detroit","name":"Holy Redeemer","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":2,"city":"Detroit","name":"Most Holy Trinity","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":2,"city":"Detroit","name":"Our Lady of Guadelupe","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":2,"city":"Detroit","name":"Our Lady Queen of Angels (Our Lady of Guadalupe Parish)","planA":"One site","planB":"One site","planC":"One site","planD":"No Plan D","overall":"One site in all models"},{"area":2,"city":"Detroit","name":"St. Anne","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":2,"city":"Detroit","name":"St. Cunegunda","planA":"Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":2,"city":"Detroit","name":"St. Francis D'Assisi (St. Francis D'Assisi-St. Hedwig Parish)","planA":"One site","planB":"One site","planC":"One site","planD":"No Plan D","overall":"One site in all models"},{"area":2,"city":"Detroit","name":"St. Gabriel","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":2,"city":"Detroit","name":"St. Hedwig (St. Francis D'Assisi-St. Hedwig Parish)","planA":"One site","planB":"One site","planC":"One site","planD":"No Plan D","overall":"One site in all models"},{"area":2,"city":"Detroit","name":"St. Juan Diego","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":2,"city":"Detroit","name":"St. Stephen-Mary, Mother of the Church (Our Lady of Guadalupe Parish)","planA":"One site","planB":"One site","planC":"One site","planD":"No Plan D","overall":"One site in all models"},{"area":3,"city":"Detroit","name":"Assumption Grotto","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":3,"city":"Detroit","name":"Holy Family","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in all models"},{"area":3,"city":"Detroit","name":"Mother of Divine Mercy","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":3,"city":"Detroit","name":"Nativity of Our Lord","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":3,"city":"Hamtramck","name":"Our Lady Queen of Apostles","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in all models"},{"area":3,"city":"Detroit","name":"Our Lady Queen of Heaven","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in all models"},{"area":3,"city":"Detroit","name":"Sacred Heart","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":3,"city":"Detroit","name":"St. Aloysius","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":3,"city":"Detroit","name":"St. Augustine & St. Monica","planA":"Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":3,"city":"Detroit","name":"St. Charles Borromeo","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":3,"city":"Detroit","name":"St. Elizabeth","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in all models"},{"area":3,"city":"Hamtramck","name":"St. Florian","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":3,"city":"Detroit","name":"St. Hyacinth","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in all models"},{"area":3,"city":"Detroit","name":"St. John Paul II","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in all models"},{"area":3,"city":"Detroit","name":"St. Joseph Shrine","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":3,"city":"Detroit","name":"St. Jude","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in all models"},{"area":3,"city":"Detroit","name":"St. Mary","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":3,"city":"Detroit","name":"St. Raymond-Our Lady of Good Counsel","planA":"No Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":4,"city":"Lincoln Park","name":"Christ the Good Shepherd","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":4,"city":"Taylor","name":"Our Lady of Angels","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":4,"city":"Wyandotte","name":"Our Lady of the Scapular","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":4,"city":"Woodhaven","name":"Our Lady of the Woods","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":4,"city":"Grosse Ile","name":"Sacred Heart","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":4,"city":"Taylor","name":"St. Alfred","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in all models"},{"area":4,"city":"Ecorse","name":"St. Andre Bessette","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":4,"city":"Taylor","name":"St. Constance","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in all models"},{"area":4,"city":"Riverview","name":"St. Cyprian","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in all models"},{"area":4,"city":"Allen Park","name":"St. Frances Cabrini","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":4,"city":"Trenton","name":"St. Joseph","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":4,"city":"Rockwood","name":"St. Mary","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":4,"city":"Melvindale","name":"St. Mary Magdalen","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in all models"},{"area":4,"city":"Southgate","name":"St. Pius X","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":4,"city":"Flat Rock","name":"St. Roch","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":4,"city":"Wyandotte","name":"St. Vincent Pallotti","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":5,"city":"Carleton","name":"Divine Grace","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":5,"city":"Temperance","name":"Our Lady of Mount Carmel","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":5,"city":"Monroe","name":"St. Anne","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in all models"},{"area":5,"city":"Temperance","name":"St. Anthony","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":5,"city":"Newport","name":"St. Charles Borromeo","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":5,"city":"Ida","name":"St. Gabriel","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":5,"city":"Monroe","name":"St. John the Baptist","planA":"No Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":5,"city":"Erie","name":"St. Joseph","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in all models"},{"area":5,"city":"Monroe","name":"St. Mary","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":5,"city":"Monroe","name":"St. Michael the Archangel","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":9,"city":"Troy","name":"Christ Our Light","planA":"No Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Saturday Vigil/Sunday Mass","overall":"No in at least one model"},{"area":9,"city":"Southfield","name":"Divine Providence","planA":"No Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Saturday Vigil/Sunday Mass","overall":"No in at least one model"},{"area":9,"city":"Clawson","name":"Guardian Angels","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":9,"city":"Birmingham","name":"Holy Name","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":9,"city":"Berkley","name":"Our Lady of La Salette","planA":"No Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Saturday Vigil/Sunday Mass","overall":"No in at least one model"},{"area":9,"city":"Beverly Hills","name":"Our Lady of Queen Martyrs","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":9,"city":"Oak Park","name":"Our Mother of Perpetual Help","planA":"No Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Saturday Vigil/Sunday Mass","overall":"No in at least one model"},{"area":9,"city":"Royal Oak","name":"Shrine of the Little Flower","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":9,"city":"Troy","name":"St. Elizabeth Ann Seton","planA":"Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"No in at least one model"},{"area":9,"city":"Hazel Park","name":"St. Justin - St. Mary Magdalen","planA":"No Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Saturday Vigil/Sunday Mass","overall":"No in at least one model"},{"area":9,"city":"Troy","name":"St. Lucy","planA":"No Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Saturday Vigil/Sunday Mass","overall":"No in at least one model"},{"area":9,"city":"Royal Oak","name":"St. Mary","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":9,"city":"Bloomfield Hills","name":"St. Owen","planA":"No Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Saturday Vigil/Sunday Mass","overall":"No in at least one model"},{"area":9,"city":"Bloomfield Hills","name":"St. Regis","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":9,"city":"Troy","name":"St. Thomas More","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Saturday Vigil/Sunday Mass","overall":"No in at least one model"},{"area":9,"city":"Madison Heights","name":"St. Vincent Ferrer","planA":"No Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Saturday Vigil/Sunday Mass","overall":"No in at least one model"},{"area":10,"city":"Lake Orion","name":"Christ the Redeemer","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":10,"city":"Orchard Lake","name":"Our Lady of Refuge","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":10,"city":"Waterford","name":"Our Lady of the Lakes","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":10,"city":"West Bloomfield","name":"Prince of Peace","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Saturday Vigil/Sunday Mass","overall":"No in at least one model"},{"area":10,"city":"Auburn Hills","name":"Sacred Heart","planA":"Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"No in at least one model"},{"area":10,"city":"Rochester","name":"St. Andrew","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":10,"city":"Ortonville","name":"St. Anne","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":10,"city":"Waterford","name":"St. Benedict","planA":"No Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Saturday Vigil/Sunday Mass","overall":"No in at least one model"},{"area":10,"city":"Pontiac","name":"St. Damien of Molokai","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":10,"city":"Clarkston","name":"St. Daniel","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":10,"city":"Bloomfield Hills","name":"St. Hugo of the Hills","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":10,"city":"Rochester Hills","name":"St. Irenaeus","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":10,"city":"Auburn Hills","name":"St. John Fisher Chapel University","planA":"Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"No in at least one model"},{"area":10,"city":"Lake Orion","name":"St. Joseph","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":10,"city":"Rochester Hills","name":"St. Mary of the Hills","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":10,"city":"Milford","name":"St. Mary, Our Lady of the Snows Parish","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":10,"city":"White Lake","name":"St. Patrick","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"Not impacted"},{"area":10,"city":"Waterford","name":"St. Perpetua","planA":"Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"No in at least one model"},{"area":10,"city":"Holly","name":"St. Rita","planA":"Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"Saturday Vigil/Sunday Mass","overall":"No in at least one model"},{"area":10,"city":"Troy","name":"St. Thomas More","planA":"No Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Saturday Vigil/Sunday Mass","overall":"No in at least one model"},{"area":12,"city":"Warren","name":"Our Lady of Grace","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":12,"city":"Warren","name":"St. Anne","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":12,"city":"Sterling Heights","name":"St. Blase","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":12,"city":"Warren","name":"St. Faustina","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":12,"city":"Clinton Township","name":"St. Francesco","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":12,"city":"Harrison Township","name":"St. Hubert","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":12,"city":"Clinton Township","name":"St. Louis","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":12,"city":"Warren","name":"St. Louise de Marillac","planA":"Saturday Vigil/Sunday Mass","planB":"No Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":12,"city":"Sterling Heights","name":"St. Malachy","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":12,"city":"Warren","name":"St. Mark","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":12,"city":"Warren","name":"St. Martin de Porres","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":12,"city":"Center Line","name":"St. Mary, Queen of Families","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":12,"city":"Clinton Township","name":"St. Paul of Tarsus","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":12,"city":"Mount Clemens","name":"St. Peter","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"},{"area":12,"city":"Clinton Township","name":"St. Ronald","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"No Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"No in at least one model"},{"area":12,"city":"Clinton Township","name":"St. Thecla","planA":"Saturday Vigil/Sunday Mass","planB":"Saturday Vigil/Sunday Mass","planC":"Saturday Vigil/Sunday Mass","planD":"No Plan D","overall":"Not impacted"}];
+
+// ── State ──
+let mode = 'parish';
+let focusedIndex = -1;
+let filteredSuggestions = [];
+
+// ── Tab switch ──
+function switchTab(m){
+  mode = m;
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.mode===m);
+    b.setAttribute('aria-selected', b.dataset.mode===m);
+  });
+  const input = document.getElementById('searchInput');
+  input.value = '';
+  input.placeholder = m==='parish' ? 'Type a parish name…' : 'Type a city or town…';
+  closeSuggestions();
+  clearResults();
+  input.focus();
+}
+
+// ── Suggestions ──
+function onInput(){
+  const val = document.getElementById('searchInput').value.trim();
+  focusedIndex = -1;
+  if(val.length < 2){closeSuggestions();return;}
+  const lower = val.toLowerCase();
+
+  if(mode==='parish'){
+    filteredSuggestions = DATA
+      .filter(p=>p.name.toLowerCase().includes(lower))
+      .slice(0,10);
+  } else {
+    const cities = [...new Set(DATA.filter(p=>p.city.toLowerCase().includes(lower)).map(p=>p.city))].slice(0,10);
+    filteredSuggestions = cities.map(c=>({city:c, name:c, _isCity:true}));
+  }
+
+  if(filteredSuggestions.length===0){closeSuggestions();return;}
+
+  const box = document.getElementById('suggestions');
+  box.innerHTML = filteredSuggestions.map((s,i)=>{
+    if(s._isCity){
+      const count = DATA.filter(p=>p.city===s.city).length;
+      return `<div class="suggestion-item" role="option" data-index="${i}" onclick="pickSuggestion(${i})">
+        <span>${s.city}</span>
+        <span class="suggestion-city">${count} parish${count!==1?'es':''}</span>
+      </div>`;
+    }
+    return `<div class="suggestion-item" role="option" data-index="${i}" onclick="pickSuggestion(${i})">
+      <span>${s.name}</span>
+      <span class="suggestion-city">${s.city}</span>
+    </div>`;
+  }).join('');
+  box.classList.add('open');
+}
+
+function pickSuggestion(i){
+  const s = filteredSuggestions[i];
+  document.getElementById('searchInput').value = s._isCity ? s.city : s.name;
+  closeSuggestions();
+  doSearch();
+}
+
+function closeSuggestions(){
+  const box = document.getElementById('suggestions');
+  box.classList.remove('open');
+  box.innerHTML='';
+}
+
+function onKeyDown(e){
+  const box = document.getElementById('suggestions');
+  const items = box.querySelectorAll('.suggestion-item');
+  if(!box.classList.contains('open')) {
+    if(e.key==='Enter') doSearch();
+    return;
+  }
+  if(e.key==='ArrowDown'){e.preventDefault();focusedIndex=Math.min(focusedIndex+1,items.length-1);updateFocus(items);}
+  else if(e.key==='ArrowUp'){e.preventDefault();focusedIndex=Math.max(focusedIndex-1,-1);updateFocus(items);}
+  else if(e.key==='Enter'){e.preventDefault();if(focusedIndex>=0)pickSuggestion(focusedIndex);else doSearch();}
+  else if(e.key==='Escape'){closeSuggestions();}
+}
+
+function updateFocus(items){
+  items.forEach((el,i)=>el.classList.toggle('focused',i===focusedIndex));
+  if(focusedIndex>=0)items[focusedIndex].scrollIntoView({block:'nearest'});
+}
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.input-wrap'))closeSuggestions();
+});
+
+// ── Search ──
+function doSearch(){
+  closeSuggestions();
+  const val = document.getElementById('searchInput').value.trim();
+  if(!val){return;}
+  const lower = val.toLowerCase();
+  let results;
+
+  if(mode==='parish'){
+    results = DATA.filter(p=>p.name.toLowerCase().includes(lower));
+  } else {
+    results = DATA.filter(p=>p.city.toLowerCase().includes(lower));
+  }
+
+  renderResults(results, val);
+}
+
+function clearResults(){
+  document.getElementById('resultsSection').classList.remove('visible');
+  document.getElementById('resultsList').innerHTML='';
+  document.getElementById('searchInput').value='';
+  closeSuggestions();
+}
+
+// ── Render ──
+function overallClass(overall){
+  if(overall==='Not impacted') return 'green';
+  if(overall==='No in all models') return 'red';
+  if(overall==='No in at least one model') return 'orange';
+  if(overall==='One site in all models') return 'blue';
+  return 'orange';
+}
+function overallIcon(overall){
+  if(overall==='Not impacted') return '✅';
+  if(overall==='No in all models') return '⛔';
+  if(overall==='No in at least one model') return '⚠️';
+  if(overall==='One site in all models') return 'ℹ️';
+  return '❓';
+}
+function overallLabel(overall){
+  if(overall==='Not impacted') return 'Not impacted — Mass offered in all models';
+  if(overall==='No in all models') return 'No weekend Mass in any model';
+  if(overall==='No in at least one model') return 'No weekend Mass in at least one model';
+  if(overall==='One site in all models') return 'One site used (merged parish) in all models';
+  return overall;
+}
+
+function planClass(val){
+  if(val==='Saturday Vigil/Sunday Mass') return 'has-mass';
+  if(val==='No Saturday Vigil/Sunday Mass') return 'no-mass';
+  if(val==='One site') return 'one-site';
+  if(val==='No Plan D') return 'no-plan';
+  return '';
+}
+function planLabel(val){
+  if(val==='Saturday Vigil/Sunday Mass') return '✓ Mass';
+  if(val==='No Saturday Vigil/Sunday Mass') return '✗ No Mass';
+  if(val==='One site') return 'One site';
+  if(val==='No Plan D') return 'N/A';
+  return val;
+}
+
+function renderResults(results, query){
+  const section = document.getElementById('resultsSection');
+  const list = document.getElementById('resultsList');
+  const title = document.getElementById('resultsTitle');
+  const count = document.getElementById('resultsCount');
+
+  section.classList.add('visible');
+
+  if(mode==='parish'){
+    title.textContent = `Results for "${query}"`;
+  } else {
+    title.textContent = `Parishes in ${toTitleCase(query)}`;
+  }
+  count.textContent = results.length === 1 ? '1 parish' : `${results.length} parishes`;
+
+  if(results.length===0){
+    list.innerHTML=`<div class="no-results">
+      <div class="no-results-icon">🔍</div>
+      <h3>No parishes found</h3>
+      <p>Try a different name or spelling.</p>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = results.map(p=>`
+    <div class="parish-card">
+      <div class="parish-header">
+        <div>
+          <div class="parish-name">${p.name}</div>
+          <div class="parish-location">📍 ${p.city} — Planning Area ${p.area}</div>
+        </div>
+      </div>
+
+      <div>
+        <span class="overall-badge ${overallClass(p.overall)}">
+          <span class="badge-dot"></span>
+          ${overallLabel(p.overall)}
+        </span>
+      </div>
+
+      <div class="plans-grid">
+        <div class="plan-item">
+          <div class="plan-label">Plan A</div>
+          <div class="plan-value ${planClass(p.planA)}">${planLabel(p.planA)}</div>
+        </div>
+        <div class="plan-item">
+          <div class="plan-label">Plan B</div>
+          <div class="plan-value ${planClass(p.planB)}">${planLabel(p.planB)}</div>
+        </div>
+        <div class="plan-item">
+          <div class="plan-label">Plan C</div>
+          <div class="plan-value ${planClass(p.planC)}">${planLabel(p.planC)}</div>
+        </div>
+        <div class="plan-item">
+          <div class="plan-label">Plan D</div>
+          <div class="plan-value ${planClass(p.planD)}">${planLabel(p.planD)}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  section.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function toTitleCase(str){
+  return str.replace(/\w\S*/g,t=>t.charAt(0).toUpperCase()+t.slice(1).toLowerCase());
+}
+
+
+</script>
+</body>
+</html>
