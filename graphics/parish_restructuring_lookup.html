@@ -139,6 +139,8 @@ a,button,[role="button"],input{
 .input-wrap{position:relative;margin-bottom:var(--space-5)}
 .search-input{
   width:100%;
+  position: relative;
+  z-index: 200;
   padding:var(--space-4) var(--space-5);
   font-size:var(--text-lg);
   border:2px solid var(--color-border);
@@ -157,7 +159,7 @@ a,button,[role="button"],input{
   border:2px solid var(--color-primary);
   border-radius:var(--radius-md);
   box-shadow:var(--shadow-lg);
-  z-index:100;
+  z-index:1000;
   max-height:280px;overflow-y:auto;
   display:none;
 }
