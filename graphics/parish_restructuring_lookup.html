@@ -596,9 +596,9 @@ function renderResults(results, query){
   section.classList.add('visible');
 
   if(mode==='parish'){
-    title.textContent = `Results for "${query}"`;
+    title.textContent = `Search Results`;
   } else {
-    title.textContent = `Parishes in ${toTitleCase(query)}`;
+    title.textContent = `Parishes in area`;
   }
   count.textContent = results.length === 1 ? '1 parish' : `${results.length} parishes`;
 
