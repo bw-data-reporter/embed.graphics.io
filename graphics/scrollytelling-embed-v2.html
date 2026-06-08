@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scrollytelling Embed — Newsroom Template</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
+
+  <style>
+    /* ─── DESIGN TOKENS ─────────────────────────────────────── */
+    :root {
+      --color-primary:       #9b2222;
+      --color-primary-dark:  #6e1818;
+      --color-primary-glass: rgba(155, 34, 34, 0.12);
+      --color-secondary:     #808080;
+      --color-tertiary:      #ffffff;
+      --color-bg:            #f0ece6;
+      --color-surface:       #ffffff;
+      --color-surface-2:     #f4f1ee;
+      --color-text:          #1a1714;
+      --color-text-muted:    #4a4745;
+      --color-text-faint:    #9b9895;
+      --color-divider:       rgba(0,0,0,0.10);
+      --color-border:        rgba(0,0,0,0.12);
+
+      /* Textbox backdrop — semi-opaque white for readability over chart */
+      --textbox-bg:          rgba(255, 255, 255, 0.94);
+      --textbox-bg-blur:     blur(12px) saturate(1.4);
+
+      --font-body:    'Source Sans 3', 'Helvetica Neue', sans-serif;
+      --font-display: 'Source Sans 3', 'Helvetica Neue', sans-serif;
+
+      --text-xs:   clamp(0.75rem,  0.7rem  + 0.25vw, 0.875rem);
+      --text-sm:   clamp(0.875rem, 0.8rem  + 0.35vw, 1rem);
+      --text-base: clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
+      --text-lg:   clamp(1.125rem, 1rem    + 0.75vw, 1.5rem);
+      --text-xl:   clamp(1.5rem,   1.2rem  + 1.25vw, 2.25rem);
+
+      --space-1:  0.25rem;  --space-2:  0.5rem;   --space-3:  0.75rem;
+      --space-4:  1rem;     --space-5:  1.25rem;  --space-6:  1.5rem;
+      --space-8:  2rem;     --space-10: 2.5rem;   --space-12: 3rem;
+      --space-16: 4rem;     --space-20: 5rem;
+
+      --radius-sm:   0.25rem;  --radius-md:   0.5rem;
+      --radius-lg:   0.875rem; --radius-full: 9999px;
+
+      --shadow-card:
+        0 2px 4px  rgba(0,0,0,0.08),
+        0 8px 24px rgba(0,0,0,0.12),
+        0 1px 1px  rgba(0,0,0,0.04);
+      --shadow-card-hover:
+        0 4px 8px  rgba(0,0,0,0.10),
+        0 16px 40px rgba(0,0,0,0.16),
+        0 1px 2px  rgba(0,0,0,0.06);
+
+      --transition-ui: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+      --transition-reveal: 500ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* ─── BASE RESET ────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+
+    body {
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      color: var(--color-text);
+      background: var(--color-bg);
+      line-height: 1.6;
+    }
+
+    button { cursor: pointer; background: none; border: none; font: inherit; color: inherit; }
+    ::selection { background: rgba(155,34,34,0.15); color: var(--color-text); }
+    :focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 3px;
+      border-radius: var(--radius-sm);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* ─── EMBED WRAPPER ─────────────────────────────────────── */
+    .scrolly-embed {
+      position: relative;
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      font-family: var(--font-body);
+      background: var(--color-bg);
+    }
+
+    /* ─── PROGRESS BAR ──────────────────────────────────────── */
+    .scrolly-progress-bar {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      height: 3px;
+      background: rgba(0,0,0,0.08);
+    }
+
+    .scrolly-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--color-primary);
+      transition: width 0.08s linear;
+    }
+
+    /* ─── HEADER ────────────────────────────────────────────── */
+    .scrolly-header {
+      padding: var(--space-10) var(--space-10) var(--space-8);
+      border-bottom: 2px solid var(--color-primary);
+      background: var(--color-surface);
+    }
+
+    .scrolly-kicker {
+      display: inline-block;
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-primary);
+      margin-bottom: var(--space-3);
+    }
+
+    .scrolly-headline {
+      font-size: var(--text-xl);
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--color-text);
+      max-width: 72ch;
+      margin-bottom: var(--space-3);
+    }
+
+    .scrolly-dek {
+      font-size: var(--text-base);
+      color: var(--color-text-muted);
+      max-width: 60ch;
+      line-height: 1.65;
+    }
+
+    .scrolly-byline {
+      margin-top: var(--space-4);
+      font-size: var(--text-xs);
+      color: var(--color-text-faint);
+      letter-spacing: 0.03em;
+    }
+
+    .scrolly-byline strong { color: var(--color-text-muted); font-weight: 600; }
+
+    /* ─── NAV DOTS ──────────────────────────────────────────── */
+    .scrolly-nav-dots {
+      position: fixed;
+      right: var(--space-5);
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .nav-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: var(--radius-full);
+      background: rgba(255,255,255,0.55);
+      border: 1.5px solid rgba(155,34,34,0.35);
+      padding: 0;
+      transition: background var(--transition-ui), transform var(--transition-ui), border-color var(--transition-ui);
+    }
+
+    .nav-dot.active {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      transform: scale(1.55);
+    }
+
+    .nav-dot:hover {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      transform: scale(1.3);
+    }
+
+    /* ─── STAGES ────────────────────────────────────────────── */
+    /* Each stage is a full-viewport sticky container.
+       The viz fills 100% width; the text box floats on top.    */
+    .scrolly-stages { position: relative; }
+
+    .scrolly-stage {
+      position: relative;
+      /* Height = viewport × dwell multiplier.
+         Extra height is the "scroll budget" the sticky viz is held for.
+         Increase the multiplier for slower storytelling. */
+      min-height: calc(var(--stage-dwell, 2.6) * 100vh);
+    }
+
+    /* ─── STICKY VIZ ────────────────────────────────────────── */
+    /* The viz-wrapper sticks at top:0 and spans 100% width.
+       Inside it, the iframe/placeholder is full viewport height. */
+    .scrolly-viz-wrapper {
+      position: sticky;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    /* Dark gradient vignette — helps text legibility over bright charts */
+    .scrolly-viz-wrapper::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      /* Vignette: soft darkening at edges, stronger at the sides
+         where the text box lives */
+      background:
+        linear-gradient(
+          to right,
+          rgba(15,10,8,0.18) 0%,
+          transparent 28%,
+          transparent 72%,
+          rgba(15,10,8,0.18) 100%
+        ),
+        linear-gradient(
+          to bottom,
+          rgba(15,10,8,0.10) 0%,
+          transparent 20%,
+          transparent 80%,
+          rgba(15,10,8,0.14) 100%
+        );
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .scrolly-viz-wrapper iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    /* Stage number badge */
+    .viz-stage-badge {
+      position: absolute;
+      top: var(--space-5);
+      left: var(--space-5);
+      background: var(--color-primary);
+      color: #fff;
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      padding: 3px var(--space-3);
+      border-radius: var(--radius-full);
+      z-index: 10;
+      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(155,34,34,0.35);
+    }
+
+    /* ─── VIZ PLACEHOLDER ───────────────────────────────────── */
+    .viz-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-4);
+      background: linear-gradient(145deg, #e8e2db 0%, #d6cfc6 100%);
+      color: var(--color-secondary);
+      padding: var(--space-8);
+      text-align: center;
+    }
+
+    .viz-placeholder svg { opacity: 0.35; }
+
+    .viz-placeholder .viz-label {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      color: var(--color-secondary);
+    }
+
+    .viz-placeholder .viz-url {
+      font-size: var(--text-xs);
+      color: var(--color-text-faint);
+      font-family: 'Courier New', monospace;
+      background: rgba(255,255,255,0.5);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-sm);
+      word-break: break-all;
+      max-width: 480px;
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: -200% 0; }
+      100% { background-position:  200% 0; }
+    }
+
+    .viz-loading {
+      background: linear-gradient(
+        90deg,
+        #e0d9d1 25%, rgba(155,34,34,0.06) 50%, #e0d9d1 75%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 2s ease-in-out infinite;
+    }
+
+    /* ─── FLOATING TEXT BOX ─────────────────────────────────── */
+    /* The text column is absolutely positioned over the viz.
+       It does NOT scroll with the page — it's part of the sticky layer.
+       JS updates its content on scroll based on which "step" is active.  */
+    .scrolly-text-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      z-index: 5;
+      pointer-events: none; /* allow clicks to pass through to viz */
+      display: flex;
+      align-items: center;
+    }
+
+    /* Default: text box on the LEFT.
+       Stages with data-text-position="right" move it right. */
+    .scrolly-stage[data-text-position="right"] .scrolly-text-overlay {
+      justify-content: flex-end;
+    }
+
+    .scrolly-stage:not([data-text-position="right"]) .scrolly-text-overlay {
+      justify-content: flex-start;
+    }
+
+    .scrolly-textbox {
+      pointer-events: auto;
+      width: clamp(280px, 36%, 440px);
+      margin: 0 var(--space-10);
+      background: var(--textbox-bg);
+      -webkit-backdrop-filter: var(--textbox-bg-blur);
+      backdrop-filter: var(--textbox-bg-blur);
+      border-radius: var(--radius-lg);
+      padding: var(--space-7, 1.75rem);
+      box-shadow: var(--shadow-card);
+      border-top: 3px solid var(--color-primary);
+
+      /* Reveal animation — driven by JS adding .visible */
+      opacity: 0;
+      transform: translateY(18px) scale(0.985);
+      transition:
+        opacity var(--transition-reveal),
+        transform var(--transition-reveal),
+        box-shadow var(--transition-ui);
+    }
+
+    .scrolly-textbox.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Subtle glow on hover */
+    .scrolly-textbox:hover {
+      box-shadow: var(--shadow-card-hover);
+    }
+
+    .textbox-number {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: 0.10em;
+      color: var(--color-primary);
+      text-transform: uppercase;
+      margin-bottom: var(--space-3);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .textbox-number::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--color-primary);
+      opacity: 0.22;
+    }
+
+    .textbox-headline {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      line-height: 1.25;
+      color: var(--color-text);
+      margin-bottom: var(--space-4);
+    }
+
+    .textbox-body {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      line-height: 1.7;
+    }
+
+    .textbox-body p + p { margin-top: var(--space-3); }
+
+    .textbox-callout {
+      margin-top: var(--space-5);
+      padding: var(--space-3) var(--space-4);
+      background: rgba(155,34,34,0.07);
+      border-radius: var(--radius-md);
+      font-size: var(--text-xs);
+      color: var(--color-primary-dark);
+      font-weight: 600;
+      line-height: 1.5;
+    }
+
+    .textbox-callout strong { color: var(--color-primary); }
+
+    /* ─── SCROLL TRIGGER SPACERS ─────────────────────────────
+       These invisible divs create vertical scroll budget.
+       The sticky viz holds while the reader scrolls through them.
+       Each stage has --stage-dwell viewports of scroll space;
+       the spacers make up the delta beyond the first viewport.  */
+    .scrolly-scroll-spacer {
+      /* Takes up the remaining height after the sticky 100vh block.
+         calc: (dwell * 100vh) - 100vh = (dwell - 1) * 100vh        */
+      height: calc((var(--stage-dwell, 2.6) - 1) * 100vh);
+      pointer-events: none;
+    }
+
+    /* ─── TRANSITION DIVIDER ─────────────────────────────────  */
+    .scrolly-divider {
+      height: var(--space-1);
+      background: linear-gradient(
+        90deg,
+        var(--color-primary) 0%,
+        var(--color-secondary) 100%
+      );
+      opacity: 0.25;
+    }
+
+    /* ─── FOOTER ────────────────────────────────────────────── */
+    .scrolly-footer {
+      padding: var(--space-10) var(--space-10);
+      border-top: 1px solid var(--color-divider);
+      background: var(--color-surface);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: var(--space-8);
+      align-items: start;
+    }
+
+    .scrolly-methodology {
+      font-size: var(--text-xs);
+      color: var(--color-text-faint);
+      line-height: 1.7;
+      max-width: 60ch;
+    }
+
+    .scrolly-methodology strong { color: var(--color-text-muted); }
+
+    .scrolly-share { display: flex; gap: var(--space-2); }
+
+    .share-btn {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-full);
+      border: 1px solid var(--color-border);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--color-text-muted);
+      background: var(--color-surface);
+      transition: background var(--transition-ui), color var(--transition-ui), border-color var(--transition-ui);
+      cursor: pointer;
+    }
+
+    .share-btn:hover {
+      background: var(--color-primary);
+      color: #fff;
+      border-color: var(--color-primary);
+    }
+
+    /* ─── MOBILE ────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      /* On mobile: stack viz then text — no overlay */
+      .scrolly-stage {
+        min-height: auto;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .scrolly-viz-wrapper {
+        position: relative;
+        height: 65vw;
+        min-height: 260px;
+        max-height: 400px;
+      }
+
+      .scrolly-text-overlay {
+        position: relative;
+        height: auto;
+        padding: var(--space-6) var(--space-5);
+        align-items: flex-start;
+        justify-content: flex-start !important;
+      }
+
+      .scrolly-textbox {
+        width: 100%;
+        margin: 0;
+        opacity: 1;
+        transform: none;
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+        background: var(--color-surface);
+      }
+
+      .scrolly-scroll-spacer { display: none; }
+      .scrolly-nav-dots { display: none; }
+      .scrolly-header,
+      .scrolly-footer { padding: var(--space-6) var(--space-5); }
+      .scrolly-footer { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 480px) {
+      .scrolly-textbox { padding: var(--space-5); }
+    }
+
+    /* ─── SPACE 7 token (not in base set) ───────────────────── */
+    :root { --space-7: 1.75rem; }
+  </style>
+</head>
+
+<body>
+<div class="scrolly-embed" id="scrolly-embed" aria-label="Scrollytelling interactive story">
+
+  <!-- Progress bar -->
+  <div class="scrolly-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+    <div class="scrolly-progress-fill" id="progressFill"></div>
+  </div>
+
+  <!-- ── HEADER ────────────────────────────────────────────── -->
+  <header class="scrolly-header">
+    <span class="scrolly-kicker">Detroit News Investigation</span>
+    <h1 class="scrolly-headline">5 years of ShotSpotter in Detroit</h1>
+    <p class="scrolly-dek">
+      In the five years since the Detroit Police Department implemented the ShotSpotter gunshot detection system, thousands of arrests and recovered firearms have been linked to officer responses triggered by the technology, according to exclusive data obtained by The Detroit News.
+    </p>
+    <p class="scrolly-byline">
+      By <strong>Ben Warren</strong> · Published Month DD, YYYY · Updated Month DD, YYYY
+    </p>
+  </header>
+
+  <!-- ── NAV DOTS (fixed, right edge) ─────────────────────── -->
+  <nav class="scrolly-nav-dots" id="navDots" aria-label="Jump to section"></nav>
+
+  <!-- ══════════════════════════════════════════════════════════
+       STAGES
+       ─────────────────────────────────────────────────────────
+       Each .scrolly-stage contains:
+         1. .scrolly-viz-wrapper  — sticky full-bleed visualization
+         2. .scrolly-text-overlay — floating textbox layered on top
+         3. .scrolly-scroll-spacer — invisible height for scroll dwell
+
+       data-text-position="right" moves the textbox to the right side.
+       Default is left.
+
+       To swap in a Flourish chart, replace the .viz-placeholder div
+       with an <iframe> (see commented example in Stage 1).
+  ══════════════════════════════════════════════════════════ -->
+
+  <div class="scrolly-stages" id="scrollyStages">
+
+    <!-- ╔═══════════════ STAGE 1 ══════════════════════════════╗ -->
+    <section class="scrolly-stage"
+             data-stage="1"
+             data-label="Overview"
+             data-text-position="right"
+             aria-label="Stage 1: Overview">
+
+      <!-- STICKY VISUALIZATION — full bleed, full height -->
+      <div class="scrolly-viz-wrapper">
+        <!-- ▼ REPLACE THIS WITH YOUR FLOURISH IFRAME ▼ -->
+        <iframe
+        src="https://flo.uri.sh/visualisation/29256357/embed"
+        title="Animated ShotSpotter incidents"
+        frameborder="0"
+        scrolling="no"
+        allow="fullscreen"
+        loading="lazy"
+        style="width:100%;height:100%;border:none">
+      </iframe>
+        <!--
+        FLOURISH EXAMPLE (uncomment & fill in your ID):
+        <iframe
+          src="https://flo.uri.sh/visualisation/YOUR_ID/embed"
+          title="Your chart title"
+          frameborder="0"
+          scrolling="no"
+          allow="fullscreen"
+          loading="lazy"
+          style="width:100%;height:100%;border:none">
+        </iframe>
+        -->
+      </div>
+
+      <!-- FLOATING TEXT BOX -->
+      <div class="scrolly-text-overlay">
+        <div class="scrolly-textbox" data-textbox="1">
+          <div class="textbox-number">Alerts</div>
+          <h2 class="textbox-headline">ShotSpotter has detected more than 50,000 incidents</h2>
+          <div class="textbox-body">
+            <p>
+              The ShotSpotter program first went online in the 8th and 9th precincts, but by March 2023, there were gunshot detection sensors deployed in most of the city's 11 precincts.
+            </p>
+          </div>
+          <div class="textbox-callout">
+            <strong>Key Stat:</strong> Total alerts rose to a high of 18,168 in 2023.
+          </div>
+        </div>
+      </div>
+
+      <!-- Scroll spacer: keeps the sticky viz visible while the reader scrolls -->
+      <div class="scrolly-scroll-spacer" aria-hidden="true"></div>
+
+    </section>
+    <!-- END STAGE 1 -->
+
+    <div class="scrolly-divider" aria-hidden="true"></div>
+
+    <!-- ╔═══════════════ STAGE 2 ══════════════════════════════╗ -->
+    <section class="scrolly-stage"
+             data-stage="2"
+             data-label="Trend"
+             data-text-position="right"
+             aria-label="Stage 2: Trend">
+
+      <div class="scrolly-viz-wrapper">
+        <!-- ▼ REPLACE WITH FLOURISH IFRAME ▼ -->
+        <iframe
+        src="https://flo.uri.sh/visualisation/29256774/embed"
+        title="ShotSpotter-linked arrests"
+        frameborder="0"
+        scrolling="no"
+        allow="fullscreen"
+        loading="lazy"
+        style="width:100%;height:100%;border:none">
+      </iframe>
+      </div>
+
+      <div class="scrolly-text-overlay">
+        <div class="scrolly-textbox" data-textbox="2">
+          <div class="textbox-number">Arrests</div>
+          <h2 class="textbox-headline">One out of every 50 alerts resulted in an arrest</h2>
+          <div class="textbox-body">
+            <p>
+              Detroit Police Department data showed that 2.3% of ShotSpotter alerts detected an incident that resulted in an arrest, a total of 1,700 arrests stemming from 1,253 unique alerts.
+            </p>
+          </div>
+          <div class="textbox-callout">
+            <strong>Context:</strong> 31 homicides were tied to a ShotSpotter alert from 2021 through 2026.
+          </div>
+        </div>
+      </div>
+
+      <div class="scrolly-scroll-spacer" aria-hidden="true"></div>
+
+    </section>
+    <!-- END STAGE 2 -->
+
+    <div class="scrolly-divider" aria-hidden="true"></div>
+
+    <!-- ╔═══════════════ STAGE 3 ══════════════════════════════╗ -->
+    <section class="scrolly-stage"
+             data-stage="3"
+             data-label="Conclusion"
+             data-text-position="left"
+             aria-label="Stage 3: Conclusion">
+
+      <div class="scrolly-viz-wrapper">
+        <!-- ▼ REPLACE WITH FLOURISH IFRAME ▼ -->
+        <iframe
+        src="https://flo.uri.sh/visualisation/29256630/embed"
+        title="Arrests and guns counter"
+        frameborder="0"
+        scrolling="no"
+        allow="fullscreen"
+        loading="lazy"
+        style="width:100%;height:100%;border:none">
+      </iframe>
+      </div>
+
+      <div class="scrolly-text-overlay">
+        <div class="scrolly-textbox" data-textbox="4">
+          <div class="textbox-number">Outcomes</div>
+          <h2 class="textbox-headline">Arrests and guns seized have been stable</h2>
+          <div class="textbox-body">
+            <p>
+              After highs of 337 arrests and 614 guns seized in 2023 ShotSpotter-linked incidents, the numbers have been remarkably consistent.
+            </p>
+            <p>
+              In 2024 and 2025, there were similar numbers of arrests (273 to 255) and guns seized (438 and 517). Through the beginning of May 2026, both arrests and guns seized were on pace for similar totals.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="scrolly-scroll-spacer" aria-hidden="true"></div>
+
+    </section>
+    <!-- END STAGE 4 -->
+
+  </div><!-- /scrollyStages -->
+
+  <!-- ── FOOTER ────────────────────────────────────────────── -->
+  <footer class="scrolly-footer">
+    <div class="scrolly-methodology">
+      <strong>Methodology:</strong> Data covering the time period 5/15/2021-5/2/2026 obtained from Detroit Police Department via Freedom of Information Act request. Analysis by Ben Warren, The Detroit News.  <time id="lastUpdated">—</time>.
+    </div>
+    <div class="scrolly-share">
+      <button class="share-btn" onclick="copyLink()" aria-label="Copy link to this story">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </svg>
+        Copy link
+      </button>
+    </div>
+  </footer>
+
+</div><!-- /scrolly-embed -->
+
+<!-- ─────────────────────────────────────────────────────────────
+     JAVASCRIPT
+     ─  Scroll → text-box reveal (IntersectionObserver)
+     ─  Progress bar
+     ─  Nav dots (build + active tracking)
+     ─  Copy link toast
+──────────────────────────────────────────────────────────────── -->
+<script>
+(function () {
+  'use strict';
+
+  /* ── DOM ──────────────────────────────────────────────────── */
+  const embed        = document.getElementById('scrolly-embed');
+  const stages       = Array.from(document.querySelectorAll('.scrolly-stage'));
+  const textboxes    = Array.from(document.querySelectorAll('.scrolly-textbox'));
+  const progressFill = document.getElementById('progressFill');
+  const navDotsEl    = document.getElementById('navDots');
+
+  /* ── Last-updated ─────────────────────────────────────────── */
+  const luEl = document.getElementById('lastUpdated');
+  if (luEl) luEl.textContent = new Date().toLocaleDateString('en-US', {
+    year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  /* ── Build nav dots ───────────────────────────────────────── */
+  stages.forEach((stage, i) => {
+    const label = stage.dataset.label || `Stage ${i + 1}`;
+    const dot   = document.createElement('button');
+    dot.className = 'nav-dot';
+    dot.setAttribute('aria-label', `Jump to ${label}`);
+    dot.setAttribute('title', label);
+    dot.addEventListener('click', () => {
+      stage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    navDotsEl.appendChild(dot);
+  });
+
+  const navDots = Array.from(navDotsEl.querySelectorAll('.nav-dot'));
+
+  /* ── Text-box reveal ──────────────────────────────────────── */
+  /* Because the textbox is inside a sticky container that doesn't
+     move with the page, we watch the containing .scrolly-stage
+     div (which is in the normal document flow) and reveal the
+     textbox when the stage enters the viewport.                  */
+  const revealObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        const stageIdx = stages.indexOf(entry.target);
+        if (stageIdx === -1) return;
+        const tb = textboxes[stageIdx];
+        if (!tb) return;
+
+        if (entry.isIntersecting) {
+          // Small stagger so the box doesn't pop immediately on scroll
+          setTimeout(() => tb.classList.add('visible'), 80);
+        } else {
+          // Optional: remove class so box re-animates if scrolled back
+          // tb.classList.remove('visible');
+        }
+      });
+    },
+    {
+      threshold: 0.05,      // trigger as soon as 5% of the stage is visible
+      rootMargin: '0px'
+    }
+  );
+
+  stages.forEach(s => revealObserver.observe(s));
+
+  /* ── Active-stage tracking (for nav dots) ─────────────────── */
+  const activeObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const idx = stages.indexOf(entry.target);
+        navDots.forEach((dot, i) => dot.classList.toggle('active', i === idx));
+      });
+    },
+    { threshold: 0.4 }
+  );
+
+  stages.forEach(s => activeObserver.observe(s));
+
+  /* ── Progress bar ─────────────────────────────────────────── */
+  function updateProgress () {
+    const embedTop  = embed.getBoundingClientRect().top + window.scrollY;
+    const embedH    = embed.offsetHeight;
+    const scrolled  = Math.max(0, window.scrollY - embedTop);
+    const viewH     = window.innerHeight;
+    const pct       = Math.min(100, (scrolled / Math.max(1, embedH - viewH)) * 100);
+
+    progressFill.style.width = pct + '%';
+    progressFill.parentElement.setAttribute('aria-valuenow', Math.round(pct));
+  }
+
+  window.addEventListener('scroll', updateProgress, { passive: true });
+  window.addEventListener('resize', updateProgress, { passive: true });
+  updateProgress();
+
+  /* ── Remove shimmer once placeholder is in view ───────────── */
+  const shimmerObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setTimeout(() => entry.target.classList.remove('viz-loading'), 500);
+          shimmerObserver.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.5 }
+  );
+
+  document.querySelectorAll('.viz-placeholder').forEach(el => shimmerObserver.observe(el));
+
+  /* ── Copy link ────────────────────────────────────────────── */
+  window.copyLink = function () {
+    const url = window.location.href;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url)
+        .then(() => showToast('Link copied!'))
+        .catch(() => fallbackCopy(url));
+    } else {
+      fallbackCopy(url);
+    }
+  };
+
+  function fallbackCopy (text) {
+    const ta = Object.assign(document.createElement('textarea'), {
+      value: text, style: 'position:fixed;opacity:0'
+    });
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Link copied!');
+  }
+
+  function showToast (msg) {
+    let t = document.getElementById('scrolly-toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'scrolly-toast';
+      t.setAttribute('role', 'status');
+      t.setAttribute('aria-live', 'polite');
+      Object.assign(t.style, {
+        position: 'fixed', bottom: '24px', left: '50%',
+        transform: 'translateX(-50%) translateY(10px)',
+        background: '#1a1714', color: '#fff',
+        fontFamily: 'var(--font-body)',
+        fontSize: '0.875rem', fontWeight: '600',
+        padding: '10px 22px', borderRadius: '9999px',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+        zIndex: '9999', opacity: '0', pointerEvents: 'none',
+        transition: 'opacity 220ms cubic-bezier(0.16,1,0.3,1), transform 220ms cubic-bezier(0.16,1,0.3,1)'
+      });
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    requestAnimationFrame(() => {
+      t.style.opacity = '1';
+      t.style.transform = 'translateX(-50%) translateY(0)';
+    });
+    setTimeout(() => {
+      t.style.opacity = '0';
+      t.style.transform = 'translateX(-50%) translateY(10px)';
+    }, 2400);
+  }
+
+})();
+</script>
+
+<!--
+╔══════════════════════════════════════════════════════════════╗
+║  NEWSROOM USAGE GUIDE — IMMERSIVE FULL-BLEED LAYOUT          ║
+╠══════════════════════════════════════════════════════════════╣
+║                                                              ║
+║  LAYOUT OVERVIEW                                             ║
+║  ───────────────                                             ║
+║  Each stage has three layers stacked in z-order:            ║
+║    z=1  .scrolly-viz-wrapper   — sticky full-bleed chart    ║
+║    z=2  ::after vignette       — semi-opaque gradient overlay║
+║    z=5  .scrolly-text-overlay  — floating text box          ║
+║                                                              ║
+║  TEXT BOX POSITION                                           ║
+║  ──────────────────                                          ║
+║  data-text-position="left"   (default) — box on left        ║
+║  data-text-position="right"            — box on right       ║
+║  Alternate left/right across stages for visual rhythm.      ║
+║                                                              ║
+║  SCROLL DWELL TIME                                           ║
+║  ─────────────────                                           ║
+║  The CSS variable --stage-dwell (default 2.6) controls how  ║
+║  many viewport-heights the reader must scroll before the    ║
+║  sticky viz gives way to the next stage. Set per-stage:     ║
+║                                                              ║
+║    <section class="scrolly-stage"                           ║
+║             style="--stage-dwell: 3.5"  ...>               ║
+║                                                              ║
+║  FLOURISH EMBED                                              ║
+║  ──────────────                                              ║
+║  In Flourish → Export → Get embed code                      ║
+║  Copy the iframe src URL. Replace the .viz-placeholder div: ║
+║                                                              ║
+║    <iframe                                                   ║
+║      src="https://flo.uri.sh/visualisation/ID/embed"        ║
+║      title="Descriptive chart title"                        ║
+║      frameborder="0" scrolling="no"                         ║
+║      allow="fullscreen" loading="lazy"                      ║
+║      style="width:100%;height:100%;border:none">            ║
+║    </iframe>                                                 ║
+║                                                              ║
+║  ADDING A NEW STAGE                                          ║
+║  ──────────────────                                          ║
+║  1. Copy a <section class="scrolly-stage"> block            ║
+║  2. Increment data-stage and data-label                     ║
+║  3. Swap text-position left/right                           ║
+║  4. Replace the .viz-placeholder with your Flourish iframe  ║
+║  5. Edit the textbox content                                ║
+║  6. Add a .scrolly-divider div between stages              ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+-->
+</body>
+</html>
