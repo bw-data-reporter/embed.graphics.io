@@ -1,6 +1,7 @@
 # embed.graphics.io
 ------------------
 ### Currently hosted on this site:
+ - [Test Score Report](https://bw-data-reporter.github.io/embed.graphics.io/graphics/test_score_report.md)
  - [Election Night Dashboard](https://bw-data-reporter.github.io/embed.graphics.io/graphics/election_night_dashboard.html)
  - [Income comparison tool](https://bw-data-reporter.github.io/embed.graphics.io/graphics/income_compare_app_search_sparkline.html)
  - [Driving story callout](https://bw-data-reporter.github.io/embed.graphics.io/graphics/metro-detroit-driving.html)
